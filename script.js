@@ -16,30 +16,19 @@ function enableAddingMode() {
   alert("Kliknij na mapie, aby dodać punkt.");
   map.once('click', function (e) {
     const latlng = e.latlng;
-    const type = prompt("Podaj typ miejsca (nocleg, atrakcja, jedzenie):");
-    if (type) {
-      addPlace(type, latlng.lat, latlng.lng);
-    }
+    const name = document.getElementById('placeName').value || "Brak nazwy";
+    const cost = parseFloat(document.getElementById('placeCost').value) || 0;
+    const date = document.getElementById('placeDate').value || "Brak daty";
+    const desc = document.getElementById('placeDesc').value || "Brak opisu";
+
+    addPlace(name, cost, date, desc, latlng.lat, latlng.lng);
   });
 }
 
 // Funkcja dodawania miejsca do pamięci lokalnej i na mapę
-function addPlace(type, lat, lng) {
-  const name = document.getElementById('placeName').value || "Brak nazwy";
-  const cost = parseFloat(document.getElementById('placeCost').value) || 0;
-  const date = document.getElementById('placeDate').value || "Brak daty";
-  const desc = document.getElementById('placeDesc').value || "Brak opisu";
-
-  const id = editingPlaceId || Date.now();
-  const place = { id, name, type, cost, date, desc, lat, lng };
-
-  if (editingPlaceId) {
-    const index = places.findIndex(p => p.id === editingPlaceId);
-    places[index] = place;
-    editingPlaceId = null;
-  } else {
-    places.push(place);
-  }
+function addPlace(name, cost, date, desc, lat, lng) {
+  const place = { id: Date.now(), name, cost, date, desc, lat, lng };
+  places.push(place);
 
   localStorage.setItem('places', JSON.stringify(places));
   clearForm();
@@ -58,16 +47,19 @@ function clearForm() {
 function renderPlaces() {
   const list = document.getElementById('placesList');
   list.innerHTML = ''; // Czyszczenie listy
+  markers.forEach(marker => map.removeLayer(marker)); // Usuwanie starych markerów
+  markers = [];
+
   places.forEach(place => {
     // Dodanie miejsca do listy
     const item = document.createElement('div');
     item.className = 'place';
-    item.innerHTML = `<b>${place.name}</b> (${place.type}) - €${place.cost}<br>${place.date}<br>${place.desc}`;
+    item.innerHTML = `<b>${place.name}</b> - €${place.cost}<br>${place.date}<br>${place.desc}`;
     list.appendChild(item);
 
     // Dodanie markera na mapę
     const marker = L.marker([place.lat, place.lng]).addTo(map);
-    marker.bindPopup(`<b>${place.name}</b><br>${place.type}<br>${place.date}<br>€${place.cost}<br>${place.desc}`);
+    marker.bindPopup(`<b>${place.name}</b><br>${place.date}<br>€${place.cost}<br>${place.desc}`);
     markers.push(marker);
   });
 }
@@ -90,10 +82,8 @@ function addRoute(points) {
   const start = document.getElementById('routeStart').value || "Brak nazwy";
   const end = document.getElementById('routeEnd').value || "Brak nazwy";
   const cost = parseFloat(document.getElementById('routeCost').value) || 0;
-  const departure = document.getElementById('departureTime').value || "Brak godziny";
-  const arrival = document.getElementById('arrivalTime').value || "Brak godziny";
 
-  const route = { start, end, cost, departure, arrival, points };
+  const route = { start, end, cost, points };
   routes.push(route);
 
   localStorage.setItem('routes', JSON.stringify(routes));
