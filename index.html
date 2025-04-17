@@ -4,42 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Planner Podróży po Europie</title>
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data:;">
 </head>
 <body>
-  <h1>🌍 Nasza podróż po Europie</h1>
-  <div id="map"></div>
-  <div id="controls">
-    <h2>Dodaj miejsce</h2>
-    <form id="placeForm" onsubmit="return addPlace(event);">
-      <input type="text" id="placeName" placeholder="Nazwa miejsca" aria-label="Nazwa miejsca" required />
-      <input type="number" id="placeCost" placeholder="Koszt (€)" aria-label="Koszt w euro" min="0" required />
-      <input type="date" id="placeDate" aria-label="Data" required />
-      <textarea id="placeDesc" placeholder="Opis" aria-label="Opis miejsca"></textarea>
-      <button type="button" onclick="enableAddingMode()">📌 Kliknij na mapie, aby dodać</button>
-    </form>
-    <select id="filterType" aria-label="Filtruj według typu" onchange="renderPlaces()">
-      <option value="">Wszystkie typy</option>
-      <option value="nocleg">Nocleg</option>
-      <option value="atrakcja">Atrakcja</option>
-      <option value="jedzenie">Jedzenie</option>
-    </select>
-
-    <h2 class="section-title">Dodaj trasę</h2>
-    <form id="routeForm" onsubmit="return enableRouteAddingMode(event);">
-      <input type="text" id="routeStart" placeholder="Miejsce początkowe" aria-label="Miejsce początkowe" required />
-      <input type="text" id="routeEnd" placeholder="Miejsce docelowe" aria-label="Miejsce docelowe" required />
-      <input type="number" id="routeCost" placeholder="Koszt biletu (€)" aria-label="Koszt biletu w euro" min="0" required />
-      <input type="time" id="departureTime" aria-label="Godzina odjazdu" />
-      <input type="time" id="arrivalTime" aria-label="Godzina przyjazdu" />
-      <button type="submit">🚆 Kliknij, aby zaznaczyć trasę</button>
-    </form>
-  </div>
-  <div id="placesList"></div>
-
+  <header>
+    <h1>🌍 Nasza podróż po Europie</h1>
+  </header>
+  <main>
+    <div id="map" role="application" aria-label="Mapa podróży"></div>
+    <section id="controls">
+      <h2>Dodaj miejsce</h2>
+      <form aria-labelledby="form-add-place">
+        <input type="text" id="placeName" placeholder="Nazwa miejsca" aria-label="Nazwa miejsca">
+        <input type="number" id="placeCost" placeholder="Koszt (€)" aria-label="Koszt">
+        <input type="date" id="placeDate" aria-label="Data">
+        <textarea id="placeDesc" placeholder="Opis" aria-label="Opis"></textarea>
+        <button type="button" onclick="enableAddingMode()">📍 Kliknij na mapie, aby dodać</button>
+      </form>
+      <h2 class="section-title">Dodaj trasę</h2>
+      <form aria-labelledby="form-add-route">
+        <input type="text" id="routeStart" placeholder="Miejsce początkowe" aria-label="Miejsce początkowe">
+        <input type="text" id="routeEnd" placeholder="Miejsce docelowe" aria-label="Miejsce docelowe">
+        <input type="number" id="routeCost" placeholder="Koszt biletu (€)" aria-label="Koszt biletu">
+        <input type="time" id="departureTime" placeholder="Godzina odjazdu" aria-label="Godzina odjazdu">
+        <input type="time" id="arrivalTime" placeholder="Godzina przyjazdu" aria-label="Godzina przyjazdu">
+        <button type="button" onclick="enableRouteAddingMode()">🚆 Kliknij, aby zaznaczyć trasę</button>
+      </form>
+    </section>
+    <section id="placesList" aria-labelledby="places-list-title">
+      <h2 id="places-list-title">📍 Lista miejsc</h2>
+      <!-- Lista miejsc generowana dynamicznie -->
+    </section>
+  </main>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+  <script src="js/scripts.js"></script>
 </body>
 </html>
