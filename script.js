@@ -9,55 +9,59 @@ let markers = [];
 let polylines = [];
 let editingPlaceId = null;
 
-function showToast(message) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerText = message;
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
-}
-
 function enableAddingMode() {
   alert("Kliknij na mapie, aby dodać punkt.");
-  map.once('click', function(e) {
-    const latlng = e.latlng;
-    const name = document.getElementById('placeName').value;
-    const cost = document.getElementById('placeCost').value;
-    const date = document.getElementById('placeDate').value;
-    const desc = document.getElementById('placeDesc').value;
-
-    if (!name || !cost || !date) {
-      showToast("Uzupełnij wszystkie wymagane pola!");
-      return;
-    }
-
-    addPlace(latlng.lat, latlng.lng);
+  map.once('click', function (e) {
+    showTypeDialog(e);
   });
 }
 
-function addPlace(lat, lng) {
-  // Example of error handling
-  try {
-    const name = document.getElementById('placeName').value;
-    const cost = parseFloat(document.getElementById('placeCost').value);
-    const date = document.getElementById('placeDate').value;
-    const desc = document.getElementById('placeDesc').value;
-
-    const place = { id: Date.now(), name, lat, lng, cost, date, desc };
-    places.push(place);
-    localStorage.setItem('places', JSON.stringify(places));
-
-    renderPlaces();
-    showToast("Miejsce zostało dodane!");
-  } catch (error) {
-    console.error("Błąd podczas dodawania miejsca:", error);
-    showToast("Wystąpił błąd przy dodawaniu miejsca.");
+function showTypeDialog(e) {
+  const latlng = e.latlng;
+  const type = prompt("Podaj typ miejsca (nocleg, atrakcja, jedzenie):");
+  if (type) {
+    addPlace(type, latlng.lat, latlng.lng);
   }
 }
 
-function renderPlaces() {
-  // Implementation here
+function addPlace(type, lat, lng) {
+  const name = document.getElementById('placeName').value || "Brak nazwy";
+  const cost = parseFloat(document.getElementById('placeCost').value) || 0;
+  const date = document.getElementById('placeDate').value || "Brak daty";
+  const desc = document.getElementById('placeDesc').value || "Brak opisu";
+
+  const id = editingPlaceId || Date.now();
+  const place = { id, name, type, cost, date, desc, lat, lng };
+
+  if (editingPlaceId) {
+    const index = places.findIndex(p => p.id === editingPlaceId);
+    places[index] = place;
+    editingPlaceId = null;
+  } else {
+    places.push(place);
+  }
+
+  localStorage.setItem('places', JSON.stringify(places));
+  clearForm();
+  renderPlaces();
 }
+
+function clearForm() {
+  document.getElementById('placeName').value = '';
+  document.getElementById('placeCost').value = '';
+  document.getElementById('placeDate').value = '';
+  document.getElementById('placeDesc').value = '';
+}
+
+function renderPlaces() {
+  const list = document.getElementById('placesList');
+  list.innerHTML = '';
+  places.forEach(place => {
+    const item = document.createElement('div');
+    item.className = 'place';
+    item.innerHTML = `<b>${place.name}</b> (${place.type}) - €${place.cost}<br>${place.date}<br>${place.desc}`;
+    list.appendChild(item);
+  });
+}
+
+renderPlaces();
