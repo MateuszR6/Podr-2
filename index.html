@@ -172,45 +172,23 @@
       savePoints(); refreshPointsList(); refreshBudget();
     }
     // Lista punktów z filtrem
-function refreshPointsList() {
-  const list = document.getElementById('pointsList');
-  list.innerHTML = "";
-  const filter = document.getElementById('filterType').value;
-
-  Object.values(markers).forEach(pt => {
-    if (filter && pt.type !== filter) return;
-
-    const li = document.createElement('li');
-    li.className = "list-group-item";
-
-    // Dodanie szczegółowych informacji o punkcie
-    let content = `<strong>[${pt.type}] ${pt.name}</strong><br>`;
-    if (pt.desc) content += `<em>Opis:</em> ${pt.desc}<br>`;
-    if (pt.address) content += `<em>Adres:</em> ${pt.address}<br>`;
-    if (!isNaN(pt.cost)) content += `<em>Koszt:</em> ${pt.cost} zł<br>`;
-    if (pt.img) content += `<img src="${pt.img}" alt="Obrazek" style="max-width: 100%; height: auto; margin-top: 5px;"><br>`;
-
-    li.innerHTML = content;
-
-    // Dodaj przyciski Edytuj i Usuń
-    const edit = document.createElement('button');
-    edit.textContent = "Edytuj";
-    edit.className = "btn btn-sm btn-info ml-2";
-    edit.onclick = () => openMarkerModal(pt);
-
-    const del = document.createElement('button');
-    del.textContent = "Usuń";
-    del.className = "btn btn-sm btn-danger ml-2";
-    del.onclick = () => removeMarker(pt.id);
-
-    li.appendChild(edit);
-    li.appendChild(del);
-
-    list.appendChild(li);
-  });
-
-  refreshRouteSelects();
-}
+    function refreshPointsList(){
+      const list = document.getElementById('pointsList'); list.innerHTML="";
+      const filter = document.getElementById('filterType').value;
+      Object.values(markers).forEach(pt=>{
+        if(filter && pt.type!==filter)return;
+        const li = document.createElement('li'); li.className="list-group-item";
+        li.textContent = `[${pt.type}] ${pt.name} - ${pt.cost} zł`;
+        const edit = document.createElement('button');
+        edit.textContent="Edytuj"; edit.className="btn btn-sm btn-info ml-2";
+        edit.onclick=()=>openMarkerModal(pt);
+        const del = document.createElement('button');
+        del.textContent="Usuń"; del.className="btn btn-sm btn-danger ml-2";
+        del.onclick=()=>removeMarker(pt.id);
+        li.appendChild(edit); li.appendChild(del);
+        list.appendChild(li);
+      });
+      refreshRouteSelects();
     }
     function refreshRouteSelects(){
       const [s,e] = [document.getElementById('routeStart'), document.getElementById('routeEnd')];
