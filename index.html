@@ -1,46 +1,784 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Planner Podróży po Europie</title>
-  <!-- Link do pliku CSS -->
-  <link rel="stylesheet" href="style.css">
-  <!-- Link do Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <title>Planer Podróży</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #f5f7fa;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1, h2, h3 {
+      margin-bottom: 0.5rem;
+    }
+    #map {
+      height: 50vh;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-right: 1rem;
+    }
+    .tab.active {
+      border-color: #3498db;
+      color: #3498db;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    button.danger {
+      background-color: #e74c3c;
+    }
+    button.danger:hover {
+      background-color: #c0392b;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    .list-item {
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .list-content {
+      flex-grow: 1;
+    }
+    .list-actions {
+      display: flex;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 1.5rem;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .close {
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .filter-button {
+      background-color: #eaeaea;
+      color: #333;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .filter-button.active {
+      background-color: #3498db;
+      color: white;
+    }
+    .budget-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .budget-card {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .total {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    .marker-food { 
+      background-color: #e74c3c; 
+    }
+    .marker-accommodation { 
+      background-color: #3498db; 
+    }
+    .marker-attraction { 
+      background-color: #2ecc71; 
+    }
+    @media (max-width: 768px) {
+      .budget-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #3498db;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>🌍 Nasza podróż po Europie</h1>
+    <h1><i class="fa fa-map-marked-alt"></i> Planer Podróży</h1>
   </header>
-  <main>
-    <div id="map" role="application" aria-label="Mapa podróży" style="height: 500px;"></div>
-    <section id="controls">
-      <h2>Dodaj miejsce</h2>
-      <form aria-labelledby="form-add-place">
-        <input type="text" id="placeName" placeholder="Nazwa miejsca" aria-label="Nazwa miejsca">
-        <input type="number" id="placeCost" placeholder="Koszt (€)" aria-label="Koszt">
-        <input type="date" id="placeDate" aria-label="Data">
-        <textarea id="placeDesc" placeholder="Opis" aria-label="Opis"></textarea>
-        <button type="button" onclick="enableAddingMode()">📍 Kliknij na mapie, aby dodać</button>
+
+  <div class="container">
+    <div id="map"></div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="points">Punkty</div>
+      <div class="tab" data-tab="routes">Trasy</div>
+      <div class="tab" data-tab="budget">Budżet</div>
+    </div>
+
+    <div class="tab-content active" id="points-content">
+      <div class="panel">
+        <h2>Punkty na mapie</h2>
+        <p>Kliknij na mapę, aby dodać nowy punkt.</p>
+        
+        <div class="filter-bar">
+          <button class="filter-button active" data-filter="all">Wszystkie</button>
+          <button class="filter-button" data-filter="food">Jedzenie</button>
+          <button class="filter-button" data-filter="accommodation">Nocleg</button>
+          <button class="filter-button" data-filter="attraction">Atrakcja</button>
+        </div>
+        
+        <div id="points-list"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="routes-content">
+      <div class="panel">
+        <h2>Trasy</h2>
+        <button id="add-route-button">Dodaj trasę</button>
+        <div id="routes-list"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="budget-content">
+      <div class="panel">
+        <h2>Budżet podróży</h2>
+        
+        <div class="budget-panel">
+          <div class="budget-card">
+            <h3>Jedzenie</h3>
+            <p id="food-cost" class="total">0.00 zł</p>
+          </div>
+          <div class="budget-card">
+            <h3>Nocleg</h3>
+            <p id="accommodation-cost" class="total">0.00 zł</p>
+          </div>
+          <div class="budget-card">
+            <h3>Atrakcje</h3>
+            <p id="attraction-cost" class="total">0.00 zł</p>
+          </div>
+          <div class="budget-card">
+            <h3>Transport</h3>
+            <p id="transport-cost" class="total">0.00 zł</p>
+          </div>
+          <div class="budget-card">
+            <h3>Dodatkowe</h3>
+            <p id="extra-cost" class="total">0.00 zł</p>
+          </div>
+          <div class="budget-card">
+            <h3>SUMA</h3>
+            <p id="total-cost" class="total">0.00 zł</p>
+          </div>
+        </div>
+
+        <h3>Koszty dodatkowe</h3>
+        <button id="add-expense-button">Dodaj wydatek</button>
+        <div id="expenses-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal do dodawania/edycji punktów -->
+  <div class="modal" id="point-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="point-modal-title">Dodaj nowy punkt</h2>
+        <span class="close">&times;</span>
+      </div>
+      <form id="point-form">
+        <input type="hidden" id="point-id">
+        <input type="hidden" id="point-lat">
+        <input type="hidden" id="point-lng">
+        
+        <div class="form-group">
+          <label for="point-name">Nazwa</label>
+          <input type="text" id="point-name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="point-type">Typ</label>
+          <select id="point-type" required>
+            <option value="food">Jedzenie</option>
+            <option value="accommodation">Nocleg</option>
+            <option value="attraction">Atrakcja</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="point-address">Adres</label>
+          <input type="text" id="point-address">
+        </div>
+        
+        <div class="form-group">
+          <label for="point-cost">Koszt (zł)</label>
+          <input type="number" id="point-cost" step="0.01" min="0" value="0">
+        </div>
+        
+        <div class="form-group">
+          <label for="point-description">Opis</label>
+          <textarea id="point-description" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="point-image">URL obrazka (opcjonalnie)</label>
+          <input type="url" id="point-image">
+        </div>
+        
+        <button type="submit">Zapisz</button>
       </form>
-      <h2 class="section-title">Dodaj trasę</h2>
-      <form aria-labelledby="form-add-route">
-        <input type="text" id="routeStart" placeholder="Miejsce początkowe" aria-label="Miejsce początkowe">
-        <input type="text" id="routeEnd" placeholder="Miejsce docelowe" aria-label="Miejsce docelowe">
-        <input type="number" id="routeCost" placeholder="Koszt biletu (€)" aria-label="Koszt biletu">
-        <input type="time" id="departureTime" placeholder="Godzina odjazdu" aria-label="Godzina odjazdu">
-        <input type="time" id="arrivalTime" placeholder="Godzina przyjazdu" aria-label="Godzina przyjazdu">
-        <button type="button" onclick="enableRouteAddingMode()">🚆 Kliknij, aby zaznaczyć trasę</button>
+    </div>
+  </div>
+
+  <!-- Modal do dodawania/edycji tras -->
+  <div class="modal" id="route-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="route-modal-title">Dodaj nową trasę</h2>
+        <span class="close">&times;</span>
+      </div>
+      <form id="route-form">
+        <input type="hidden" id="route-id">
+        
+        <div class="form-group">
+          <label for="route-start">Punkt początkowy</label>
+          <select id="route-start" required></select>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-end">Punkt końcowy</label>
+          <select id="route-end" required></select>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-departure-date">Data wyjazdu</label>
+          <input type="date" id="route-departure-date" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-departure-time">Godzina wyjazdu</label>
+          <input type="time" id="route-departure-time" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-arrival-date">Data przyjazdu</label>
+          <input type="date" id="route-arrival-date" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-arrival-time">Godzina przyjazdu</label>
+          <input type="time" id="route-arrival-time" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-description">Opis</label>
+          <textarea id="route-description" rows="3"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="route-cost">Koszt (zł)</label>
+          <input type="number" id="route-cost" step="0.01" min="0" value="0">
+        </div>
+        
+        <button type="submit">Zapisz</button>
       </form>
-    </section>
-    <section id="placesList" aria-labelledby="places-list-title">
-      <h2 id="places-list-title">📍 Lista miejsc</h2>
-    </section>
-  </main>
-  <!-- Leaflet.js -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Skrypt JavaScript -->
-  <script src="script.js"></script>
-</body>
-</html>
+    </div>
+  </div>
+
+  <!-- Modal do dodawania/edycji dodatkowych wydatków -->
+  <div class="modal" id="expense-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="expense-modal-title">Dodaj nowy wydatek</h2>
+        <span class="close">&times;</span>
+      </div>
+      <form id="expense-form">
+        <input type="hidden" id="expense-id">
+        
+        <div class="form-group">
+          <label for="expense-name">Nazwa</label>
+          <input type="text" id="expense-name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="expense-cost">Koszt (zł)</label>
+          <input type="number" id="expense-cost" step="0.01" min="0" value="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="expense-description">Opis</label>
+          <textarea id="expense-description" rows="3"></textarea>
+        </div>
+        
+        <button type="submit">Zapisz</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script>
+    // Generowanie UUID
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Inicjalizacja mapy
+    const map = L.map('map').setView([52.2297, 21.0122], 13); // Warszawa jako domyślna lokalizacja
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Dane aplikacji
+    let points = JSON.parse(localStorage.getItem('travelPoints')) || [];
+    let routes = JSON.parse(localStorage.getItem('travelRoutes')) || [];
+    let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
+    
+    // Warstwy mapy
+    const markersLayer = L.layerGroup().addTo(map);
+    const routesLayer = L.layerGroup().addTo(map);
+    
+    // Referencje do elementów DOM
+    const pointsContent = document.getElementById('points-content');
+    const routesContent = document.getElementById('routes-content');
+    const budgetContent = document.getElementById('budget-content');
+    
+    const pointsList = document.getElementById('points-list');
+    const routesList = document.getElementById('routes-list');
+    const expensesList = document.getElementById('expenses-list');
+    
+    const pointModal = document.getElementById('point-modal');
+    const routeModal = document.getElementById('route-modal');
+    const expenseModal = document.getElementById('expense-modal');
+
+    const addRouteButton = document.getElementById('add-route-button');
+    const addExpenseButton = document.getElementById('add-expense-button');
+
+    // Obsługa zakładek
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-content`).classList.add('active');
+      });
+    });
+    
+    // Obsługa filtrów punktów
+    document.querySelectorAll('.filter-button').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.filter-button').forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        
+        renderPointsList(button.dataset.filter);
+      });
+    });
+    
+    // Zamykanie modalów
+    document.querySelectorAll('.modal .close').forEach(closeBtn => {
+      closeBtn.addEventListener('click', () => {
+        closeBtn.closest('.modal').style.display = 'none';
+      });
+    });
+    
+    // Dodawanie nowego punktu przez kliknięcie w mapę
+    map.on('click', (e) => {
+      document.getElementById('point-id').value = '';
+      document.getElementById('point-lat').value = e.latlng.lat;
+      document.getElementById('point-lng').value = e.latlng.lng;
+      document.getElementById('point-name').value = '';
+      document.getElementById('point-type').value = 'food';
+      document.getElementById('point-address').value = '';
+      document.getElementById('point-cost').value = '0';
+      document.getElementById('point-description').value = '';
+      document.getElementById('point-image').value = '';
+      
+      document.getElementById('point-modal-title').textContent = 'Dodaj nowy punkt';
+      pointModal.style.display = 'block';
+    });
+    
+    // Obsługa formularza punktu
+    document.getElementById('point-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('point-id').value || generateUUID();
+      const point = {
+        id: id,
+        name: document.getElementById('point-name').value,
+        type: document.getElementById('point-type').value,
+        lat: parseFloat(document.getElementById('point-lat').value),
+        lng: parseFloat(document.getElementById('point-lng').value),
+        address: document.getElementById('point-address').value,
+        cost: parseFloat(document.getElementById('point-cost').value),
+        description: document.getElementById('point-description').value,
+        image: document.getElementById('point-image').value
+      };
+      
+      if (document.getElementById('point-id').value) {
+        // Edycja istniejącego punktu
+        const index = points.findIndex(p => p.id === id);
+        if (index !== -1) {
+          points[index] = point;
+        }
+      } else {
+        // Dodawanie nowego punktu
+        points.push(point);
+      }
+      
+      savePoints();
+      renderPoints();
+      renderPointsList();
+      updateRouteSelectOptions();
+      updateBudget();
+      
+      pointModal.style.display = 'none';
+    });
+    
+    // Przycisk dodawania nowej trasy
+    addRouteButton.addEventListener('click', () => {
+      document.getElementById('route-id').value = '';
+      document.getElementById('route-start').value = '';
+      document.getElementById('route-end').value = '';
+      
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('route-departure-date').value = today;
+      document.getElementById('route-departure-time').value = '08:00';
+      document.getElementById('route-arrival-date').value = today;
+      document.getElementById('route-arrival-time').value = '10:00';
+      
+      document.getElementById('route-description').value = '';
+      document.getElementById('route-cost').value = '0';
+      
+      document.getElementById('route-modal-title').textContent = 'Dodaj nową trasę';
+      routeModal.style.display = 'block';
+    });
+    
+    // Obsługa formularza trasy
+    document.getElementById('route-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('route-id').value || generateUUID();
+      const route = {
+        id: id,
+        startPointId: document.getElementById('route-start').value,
+        endPointId: document.getElementById('route-end').value,
+        departureDate: document.getElementById('route-departure-date').value,
+        departureTime: document.getElementById('route-departure-time').value,
+        arrivalDate: document.getElementById('route-arrival-date').value,
+        arrivalTime: document.getElementById('route-arrival-time').value,
+        description: document.getElementById('route-description').value,
+        cost: parseFloat(document.getElementById('route-cost').value)
+      };
+      
+      if (document.getElementById('route-id').value) {
+        // Edycja istniejącej trasy
+        const index = routes.findIndex(r => r.id === id);
+        if (index !== -1) {
+          routes[index] = route;
+        }
+      } else {
+        // Dodawanie nowej trasy
+        routes.push(route);
+      }
+      
+      saveRoutes();
+      renderRoutes();
+      renderRoutesList();
+      updateBudget();
+      
+      routeModal.style.display = 'none';
+    });
+    
+    // Przycisk dodawania nowego wydatku
+    addExpenseButton.addEventListener('click', () => {
+      document.getElementById('expense-id').value = '';
+      document.getElementById('expense-name').value = '';
+      document.getElementById('expense-cost').value = '0';
+      document.getElementById('expense-description').value = '';
+      
+      document.getElementById('expense-modal-title').textContent = 'Dodaj nowy wydatek';
+      expenseModal.style.display = 'block';
+    });
+    
+    // Obsługa formularza wydatku
+    document.getElementById('expense-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const id = document.getElementById('expense-id').value || generateUUID();
+      const expense = {
+        id: id,
+        name: document.getElementById('expense-name').value,
+        cost: parseFloat(document.getElementById('expense-cost').value),
+        description: document.getElementById('expense-description').value
+      };
+      
+      if (document.getElementById('expense-id').value) {
+        // Edycja istniejącego wydatku
+        const index = expenses.findIndex(exp => exp.id === id);
+        if (index !== -1) {
+          expenses[index] = expense;
+        }
+      } else {
+        // Dodawanie nowego wydatku
+        expenses.push(expense);
+      }
+      
+      saveExpenses();
+      renderExpensesList();
+      updateBudget();
+      
+      expenseModal.style.display = 'none';
+    });
+    
+    // Zapisywanie danych do localStorage
+    function savePoints() {
+      localStorage.setItem('travelPoints', JSON.stringify(points));
+    }
+    
+    function saveRoutes() {
+      localStorage.setItem('travelRoutes', JSON.stringify(routes));
+    }
+    
+    function saveExpenses() {
+      localStorage.setItem('travelExpenses', JSON.stringify(expenses));
+    }
+    
+    // Renderowanie punktów na mapie
+    function renderPoints() {
+      markersLayer.clearLayers();
+      
+      points.forEach(point => {
+        const markerIcon = L.divIcon({
+          className: `marker-${point.type}`,
+          html: `<i class="fa fa-map-marker-alt" style="font-size: 24px; color: white;"></i>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 30]
+        });
+        
+        const marker = L.marker([point.lat, point.lng], {icon: markerIcon}).addTo(markersLayer);
+        
+        let popupContent = `<h3>${point.name}</h3>`;
+        if (point.address) popupContent += `<p><strong>Adres:</strong> ${point.address}</p>`;
+        if (point.description) popupContent += `<p>${point.description}</p>`;
+        if (point.cost > 0) popupContent += `<p><strong>Koszt:</strong> ${point.cost.toFixed(2)} zł</p>`;
+        if (point.image) popupContent += `<img src="${point.image}" alt="${point.name}" style="max-width: 100%; max-height: 150px; margin-top: 10px;">`;
+        
+        marker.bindPopup(popupContent);
+      });
+    }
+    
+    // Renderowanie tras na mapie
+    function renderRoutes() {
+      routesLayer.clearLayers();
+      
+      routes.forEach(route => {
+        const startPoint = points.find(p => p.id === route.startPointId);
+        const endPoint = points.find(p => p.id === route.endPointId);
+        
+        if (startPoint && endPoint) {
+          const polyline = L.polyline([
+            [startPoint.lat, startPoint.lng],
+            [endPoint.lat, endPoint.lng]
+          ], {
+            color: '#3498db',
+            weight: 3,
+            opacity: 0.7
+          }).addTo(routesLayer);
+          
+          let popupContent = `<h3>Trasa: ${startPoint.name} → ${endPoint.name}</h3>`;
+          
+          const departureDateTime = `${route.departureDate} ${route.departureTime}`;
+          const arrivalDateTime = `${route.arrivalDate} ${route.arrivalTime}`;
+          
+          popupContent += `<p><strong>Wyjazd:</strong> ${departureDateTime}</p>`;
+          popupContent += `<p><strong>Przyjazd:</strong> ${arrivalDateTime}</p>`;
+          
+          if (route.description) popupContent += `<p>${route.description}</p>`;
+          if (route.cost > 0) popupContent += `<p><strong>Koszt:</strong> ${route.cost.toFixed(2)} zł</p>`;
+          
+          polyline.bindPopup(popupContent);
+        }
+      });
+    }
+    
+    // Renderowanie listy punktów
+    function renderPointsList(filter = 'all') {
+      pointsList.innerHTML = '';
+      
+      let filteredPoints = points;
+      if (filter !== 'all') {
+        filteredPoints = points.filter(point => point.type === filter);
+      }
+      
+      if (filteredPoints.length === 0) {
+        pointsList.innerHTML = '<p>Brak punktów do wyświetlenia.</p>';
+        return;
+      }
+      
+      filteredPoints.forEach(point => {
+        const pointItem = document.createElement('div');
+        pointItem.className = 'list-item';
+        
+        const typeLabels = {
+          'food': 'Jedzenie',
+          'accommodation': 'Nocleg',
+          'attraction': 'Atrakcja'
+        };
+        
+        pointItem.innerHTML = `
+          <div class="list-content">
+            <h3>${point.name}</h3>
+            <p><strong>Typ:</strong> ${typeLabels[point.type]}</p>
+            ${point.address ? `<p><strong>Adres:</strong> ${point.address}</p>` : ''}
+            ${point.cost > 0 ? `<p><strong>Koszt:</strong> ${point.cost.toFixed(2)} zł</p>` : ''}
+          </div>
+          <div class="list-actions">
+            <button class="edit-point" data-id="${point.id}">Edytuj</button>
+            <button class="danger delete-point" data-id="${point.id}">Usuń</button>
+          </div>
+        `;
+        
+        pointsList.appendChild(pointItem);
+      });
+      
+      // Dodawanie obsługi przycisków
+      document.querySelectorAll('.edit-point').forEach(button => {
+        button.addEventListener('click', () => {
+          const point = points.find(p => p.id === button.dataset.id);
+          if (point) {
+            document.getElementById('point-id').value = point.id;
+            document.getElementById('point-lat').value = point.lat;
+            document.getElementById('point-lng').value = point.lng;
+            document.getElementById('point-name').value = point.name;
+            document.getElementById('point-type').value = point.type;
+            document.getElementById('point-address').value = point.address || '';
+            document.getElementById('point-cost').value = point.cost;
+            document.getElementById('point-description').value = point.description || '';
+            document.getElementById('point-image').value = point.image || '';
+            
+            document.getElementById('point-modal-title').textContent = 'Edytuj punkt';
+            pointModal.style.display = 'block';
+          }
+        });
+      });
+      
+      document.querySelectorAll
