@@ -1,316 +1,149 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Planer Podróży</title>
-  <!-- Bootstrap i Leaflet CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    body { padding: 10px; }
-    #map { height: 400px; }
-    .sidebar { max-height: 400px; overflow-y: auto; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Planer podróży - zarządzaj punktami, trasami i budżetem swoich podróży.">
+    <meta name="keywords" content="planer podróży, mapa, budżet, trasy">
+    <meta name="author" content="MateuszR6">
+    <title>Planer Podróży</title>
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <style>
+        body {
+            padding: 10px;
+        }
+        #map {
+            height: 400px;
+        }
+        .sidebar {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
-  <div class="container-fluid">
-    <h1 class="text-center">Planer Podróży</h1>
-    <div class="row">
-      <div class="col-md-8">
-         <div id="map"></div>
-         <button id="addRouteBtn" class="btn btn-primary mt-2 btn-block">Dodaj trasę</button>
-      </div>
-      <div class="col-md-4">
-         <h4>Punkty</h4>
-         <select id="filterType" class="form-control mb-2">
-           <option value="">Wszystkie</option>
-           <option value="Jedzenie">Jedzenie</option>
-           <option value="Nocleg">Nocleg</option>
-           <option value="Atrakcja">Atrakcja</option>
-         </select>
-         <ul id="pointsList" class="list-group sidebar"></ul>
-         <hr>
-         <h4>Trasy</h4>
-         <ul id="routesList" class="list-group sidebar"></ul>
-         <hr>
-         <h4>Budżet</h4>
-         <ul id="budgetList" class="list-group sidebar"></ul>
-         <hr>
-         <h4>Koszty dodatkowe</h4>
-         <input type="text" id="extraDesc" placeholder="Opis" class="form-control mb-1">
-         <input type="number" id="extraCost" placeholder="Koszt" class="form-control mb-1">
-         <button id="addExtraBtn" class="btn btn-secondary btn-block">Dodaj</button>
-         <ul id="extrasList" class="list-group sidebar mt-2"></ul>
-      </div>
+    <div class="container-fluid">
+        <header class="text-center">
+            <h1>Planer Podróży</h1>
+        </header>
+        <main>
+            <div class="row">
+                <section class="col-md-8" aria-label="Mapa">
+                    <div id="map" role="application" aria-label="Mapa podróży"></div>
+                    <button id="addRouteBtn" class="btn btn-primary mt-2 btn-block" title="Dodaj trasę">Dodaj trasę</button>
+                </section>
+                <aside class="col-md-4">
+                    <div>
+                        <h4>Punkty</h4>
+                        <select id="filterType" class="form-control mb-2" aria-label="Filtruj punkty">
+                            <option value="">Wszystkie</option>
+                            <option value="Jedzenie">Jedzenie</option>
+                            <option value="Nocleg">Nocleg</option>
+                            <option value="Atrakcja">Atrakcja</option>
+                        </select>
+                        <ul id="pointsList" class="list-group sidebar" aria-label="Lista punktów"></ul>
+                    </div>
+                    <hr>
+                    <div>
+                        <h4>Trasy</h4>
+                        <ul id="routesList" class="list-group sidebar" aria-label="Lista tras"></ul>
+                    </div>
+                    <hr>
+                    <div>
+                        <h4>Budżet</h4>
+                        <ul id="budgetList" class="list-group sidebar" aria-label="Lista budżetu"></ul>
+                    </div>
+                    <hr>
+                    <div>
+                        <h4>Koszty dodatkowe</h4>
+                        <form id="extraCostsForm">
+                            <input type="text" id="extraDesc" placeholder="Opis" class="form-control mb-1" required>
+                            <input type="number" id="extraCost" placeholder="Koszt" class="form-control mb-1" required>
+                            <button id="addExtraBtn" class="btn btn-secondary btn-block" type="submit">Dodaj</button>
+                        </form>
+                        <ul id="extrasList" class="list-group sidebar mt-2" aria-label="Lista kosztów dodatkowych"></ul>
+                    </div>
+                </aside>
+            </div>
+        </main>
     </div>
-  </div>
 
-  <!-- Modal dla punktu -->
-  <div class="modal" id="markerModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="markerForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Punkt</h5>
-          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+    <!-- Modal dla punktu -->
+    <div class="modal fade" id="markerModal" tabindex="-1" aria-labelledby="markerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="markerForm" class="modal-content">
+                <div class="modal-header">
+                    <h5 id="markerModalLabel" class="modal-title">Punkt</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Zamknij">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="markerId">
+                    <div class="form-group">
+                        <label for="markerName">Nazwa</label>
+                        <input type="text" id="markerName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="markerType">Typ</label>
+                        <select id="markerType" class="form-control">
+                            <option value="Jedzenie">Jedzenie</option>
+                            <option value="Nocleg">Nocleg</option>
+                            <option value="Atrakcja">Atrakcja</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="markerDesc">Opis</label>
+                        <textarea id="markerDesc" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="markerAddress">Adres</label>
+                        <input type="text" id="markerAddress" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="markerCost">Koszt</label>
+                        <input type="number" id="markerCost" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Zapisz</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <input type="hidden" id="markerId">
-          <div class="form-group">
-            <label>Nazwa</label>
-            <input type="text" id="markerName" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Typ</label>
-            <select id="markerType" class="form-control">
-              <option value="Jedzenie">Jedzenie</option>
-              <option value="Nocleg">Nocleg</option>
-              <option value="Atrakcja">Atrakcja</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Opis</label>
-            <textarea id="markerDesc" class="form-control"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Adres</label>
-            <input type="text" id="markerAddress" class="form-control">
-          </div>
-          <div class="form-group">
-            <label>Koszt</label>
-            <input type="number" id="markerCost" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>URL obrazka (opcjonalnie)</label>
-            <input type="url" id="markerImg" class="form-control">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Zapisz</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <!-- Modal dla trasy -->
-  <div class="modal" id="routeModal" tabindex="-1">
-    <div class="modal-dialog">
-      <form id="routeForm" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Trasa</h5>
-          <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" id="routeId">
-          <div class="form-group">
-            <label>Punkt początkowy</label>
-            <select id="routeStart" class="form-control" required></select>
-          </div>
-          <div class="form-group">
-            <label>Punkt końcowy</label>
-            <select id="routeEnd" class="form-control" required></select>
-          </div>
-          <div class="form-group">
-            <label>Data i godzina odjazdu</label>
-            <input type="datetime-local" id="routeDepart" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Data i godzina przyjazdu</label>
-            <input type="datetime-local" id="routeArrive" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>Opis</label>
-            <textarea id="routeDesc" class="form-control"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Koszt</label>
-            <input type="number" id="routeCost" class="form-control" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Zapisz trasę</button>
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Anuluj</button>
-        </div>
-      </form>
-    </div>
-  </div>
+    <!-- Skrypty -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Inicjalizacja mapy
+        const map = L.map('map').setView([52.0, 19.0], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-  <!-- Skrypty: jQuery, Popper, Bootstrap, Leaflet -->
-  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    // UUID
-    function uuidv4(){return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));}
-    const map = L.map('map').setView([52.0, 19.0], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    let markers = {}, routes = {}, extras = [];
-    const typeColors = {"Jedzenie":"red","Nocleg":"blue","Atrakcja":"green"};
-    // Ładowanie danych
-    function loadData(){
-      try{ JSON.parse(localStorage.getItem('points'))?.forEach(pt=>addMarkerToMap(pt,false)); } catch(e){ console.error(e); }
-      routes = JSON.parse(localStorage.getItem('routes'))||{};
-      extras = JSON.parse(localStorage.getItem('extras'))||[];
-      refreshPointsList(); refreshRoutesList(); refreshBudget(); refreshExtrasList();
-    }
-    function savePoints(){ localStorage.setItem('points', JSON.stringify(Object.values(markers))); }
-    function saveRoutes(){ localStorage.setItem('routes', JSON.stringify(routes)); }
-    function saveExtras(){ localStorage.setItem('extras', JSON.stringify(extras)); }
-    // Dodawanie markera na mapie
-    function addMarkerToMap(data, doSave=true){
-      const m = L.circleMarker([data.lat, data.lng], {color: typeColors[data.type]||"black"})
-        .addTo(map).bindPopup(`<b>${data.name}</b><br>${data.desc}`);
-      data._leaflet_id = m._leaflet_id;
-      markers[data.id]=data;
-      if(doSave){ savePoints(); refreshPointsList(); refreshBudget(); }
-    }
-    function removeMarker(id){
-      map.eachLayer(layer=>{ if(layer._leaflet_id===markers[id]._leaflet_id) map.removeLayer(layer); });
-      delete markers[id];
-      savePoints(); refreshPointsList(); refreshBudget();
-    }
-    // Lista punktów z filtrem
-    function refreshPointsList(){
-      const list = document.getElementById('pointsList'); list.innerHTML="";
-      const filter = document.getElementById('filterType').value;
-      Object.values(markers).forEach(pt=>{
-        if(filter && pt.type!==filter)return;
-        const li = document.createElement('li'); li.className="list-group-item";
-        li.textContent = `[${pt.type}] ${pt.name} - ${pt.cost} zł`;
-        const edit = document.createElement('button');
-        edit.textContent="Edytuj"; edit.className="btn btn-sm btn-info ml-2";
-        edit.onclick=()=>openMarkerModal(pt);
-        const del = document.createElement('button');
-        del.textContent="Usuń"; del.className="btn btn-sm btn-danger ml-2";
-        del.onclick=()=>removeMarker(pt.id);
-        li.appendChild(edit); li.appendChild(del);
-        list.appendChild(li);
-      });
-      refreshRouteSelects();
-    }
-    function refreshRouteSelects(){
-      const [s,e] = [document.getElementById('routeStart'), document.getElementById('routeEnd')];
-      [s,e].forEach(sel=>{ sel.innerHTML=""; Object.values(markers).forEach(pt=>{
-         const opt=document.createElement('option'); opt.value=pt.id; opt.text=pt.name; sel.appendChild(opt);
-      });});
-    }
-    // Modal dla punktu
-    function openMarkerModal(data=null){
-      document.getElementById('markerForm').reset();
-      document.getElementById('markerId').value = data?data.id:"";
-      if(data){
-        document.getElementById('markerName').value = data.name;
-        document.getElementById('markerType').value = data.type;
-        document.getElementById('markerDesc').value = data.desc;
-        document.getElementById('markerAddress').value = data.address;
-        document.getElementById('markerCost').value = data.cost;
-        document.getElementById('markerImg').value = data.img||"";
-      }
-      $('#markerModal').modal('show');
-    }
-    document.getElementById('markerForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const id = document.getElementById('markerId').value || uuidv4();
-      const data = {
-        id: id,
-        name: document.getElementById('markerName').value,
-        type: document.getElementById('markerType').value,
-        desc: document.getElementById('markerDesc').value,
-        address: document.getElementById('markerAddress').value,
-        cost: parseFloat(document.getElementById('markerCost').value),
-        img: document.getElementById('markerImg').value,
-        lat: markerLat, lng: markerLng
-      };
-      if(markers[id]) removeMarker(id);
-      addMarkerToMap(data);
-      $('#markerModal').modal('hide');
-    });
-    let markerLat, markerLng;
-    map.on('click', e=>{ markerLat=e.latlng.lat; markerLng=e.latlng.lng; openMarkerModal(); });
-    // Trasy
-    function refreshRoutesList(){
-      const list = document.getElementById('routesList'); list.innerHTML="";
-      Object.values(routes).forEach(rt=>{
-        const li = document.createElement('li'); li.className="list-group-item";
-        li.textContent=`${markers[rt.start]?.name} -> ${markers[rt.end]?.name} : ${rt.cost} zł`;
-        const edit = document.createElement('button');
-        edit.textContent="Edytuj"; edit.className="btn btn-sm btn-info ml-2";
-        edit.onclick=()=>openRouteModal(rt);
-        const del = document.createElement('button');
-        del.textContent="Usuń"; del.className="btn btn-sm btn-danger ml-2";
-        del.onclick=()=>{
-          delete routes[rt.id]; saveRoutes(); refreshRoutesList(); refreshBudget();
-          map.eachLayer(l=>{ if(l._routeId===rt.id) map.removeLayer(l); });
-        };
-        li.appendChild(edit); li.appendChild(del);
-        list.appendChild(li);
-      });
-      refreshBudget();
-    }
-    function openRouteModal(data=null){
-      document.getElementById('routeForm').reset();
-      document.getElementById('routeId').value = data?data.id:"";
-      if(data){
-        document.getElementById('routeStart').value = data.start;
-        document.getElementById('routeEnd').value = data.end;
-        document.getElementById('routeDepart').value = data.depart;
-        document.getElementById('routeArrive').value = data.arrive;
-        document.getElementById('routeDesc').value = data.desc;
-        document.getElementById('routeCost').value = data.cost;
-      }
-      $('#routeModal').modal('show');
-    }
-    document.getElementById('routeForm').addEventListener('submit', e=>{
-      e.preventDefault();
-      const depart = document.getElementById('routeDepart').value,
-            arrive = document.getElementById('routeArrive').value;
-      if(new Date(arrive) < new Date(depart)){ alert("Data przyjazdu musi być późniejsza niż odjazdu."); return; }
-      const id = document.getElementById('routeId').value || uuidv4();
-      const rt = { id: id,
-        start: document.getElementById('routeStart').value,
-        end: document.getElementById('routeEnd').value,
-        depart: depart, arrive: arrive,
-        desc: document.getElementById('routeDesc').value,
-        cost: parseFloat(document.getElementById('routeCost').value)
-      };
-      routes[id] = rt; saveRoutes(); drawRoute(rt);
-      $('#routeModal').modal('hide'); refreshRoutesList();
-    });
-    function drawRoute(rt){
-      const start = markers[rt.start], end = markers[rt.end];
-      if(start && end){ const poly = L.polyline([[start.lat,start.lng],[end.lat,end.lng]],{color:'orange'}).addTo(map); poly._routeId = rt.id; }
-    }
-    document.getElementById('addRouteBtn').onclick = ()=>openRouteModal();
-    // Budżet
-    function refreshBudget(){
-      const budget = {"Jedzenie":0,"Nocleg":0,"Atrakcja":0,"Transport":0,"Dodatkowe":0};
-      Object.values(markers).forEach(pt=>{ if(budget[pt.type]!=undefined) budget[pt.type]+=pt.cost; });
-      Object.values(routes).forEach(rt=>{ budget["Transport"] += rt.cost; });
-      extras.forEach(ex=>{ budget["Dodatkowe"] += ex.cost; });
-      const list=document.getElementById('budgetList'); list.innerHTML="";
-      for(let key in budget){ const li=document.createElement('li'); li.className="list-group-item"; li.textContent=`${key}: ${budget[key].toFixed(2)} zł`; list.appendChild(li); }
-    }
-    // Koszty dodatkowe
-    document.getElementById('addExtraBtn').addEventListener('click', ()=>{
-      const desc = document.getElementById('extraDesc').value,
-            cost = parseFloat(document.getElementById('extraCost').value);
-      if(!desc || isNaN(cost)){ alert("Wprowadź poprawne dane."); return; }
-      extras.push({id: uuidv4(), desc, cost}); saveExtras(); refreshExtrasList(); refreshBudget();
-    });
-    function refreshExtrasList(){
-      const list = document.getElementById('extrasList'); list.innerHTML="";
-      extras.forEach(ex=>{
-        const li = document.createElement('li'); li.className="list-group-item";
-        li.textContent=`${ex.desc} - ${ex.cost} zł`;
-        const del = document.createElement('button'); del.textContent="Usuń"; del.className="btn btn-sm btn-danger ml-2";
-        del.onclick=()=>{ extras=extras.filter(e=>e.id!==ex.id); saveExtras(); refreshExtrasList(); refreshBudget(); };
-        li.appendChild(del); list.appendChild(li);
-      });
-    }
-    document.getElementById('filterType').addEventListener('change', refreshPointsList);
-    loadData();
-  </script>
+        // Funkcje mapy
+        let markers = {};
+        const typeColors = { "Jedzenie": "red", "Nocleg": "blue", "Atrakcja": "green" };
+
+        function addMarkerToMap(data) {
+            const marker = L.circleMarker([data.lat, data.lng], { color: typeColors[data.type] || "black" })
+                .addTo(map)
+                .bindPopup(`<b>${data.name}</b><br>${data.desc}`);
+            markers[data.id] = data;
+        }
+
+        // Inicjalizacja danych
+        function loadData() {
+            const storedMarkers = JSON.parse(localStorage.getItem('points')) || [];
+            storedMarkers.forEach(addMarkerToMap);
+        }
+
+        // Wywołanie ładowania danych
+        loadData();
+    </script>
 </body>
 </html>
