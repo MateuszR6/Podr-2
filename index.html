@@ -3,63 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Podróż Gosi i Mateusza</title>
-
-    <!-- Linki do zewnętrznych arkuszy stylów -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* Stylowanie ogólne */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
         header {
-            background-color: #4CAF50;
-            color: white;
             text-align: center;
-            padding: 20px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 2em;
-        }
-
-        .container {
-            padding: 20px;
-        }
-
-        .map-container {
-            width: 100%;
-            height: 400px;
-            margin-top: 20px;
-        }
-
-        /* Stylowanie mapy */
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Stylowanie przycisków */
-        .btn {
+            padding: 1em;
             background-color: #4CAF50;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
         }
-
-        .btn:hover {
-            background-color: #45a049;
+        #map {
+            height: 50vh;
+            width: 100%;
         }
     </style>
 </head>
@@ -67,1060 +28,1045 @@
     <header>
         <h1>Podróż Gosi i Mateusza</h1>
     </header>
-
-    <div class="container">
-        <!-- Sekcja Mapy -->
-        <section id="map-section">
+    <main>
+        <!-- Sekcja: Mapa -->
+        <section id="mapSection">
             <h2>Mapa</h2>
-            <div id="map" class="map-container"></div>
-            <button class="btn" id="add-point-btn">Dodaj Punkt</button>
+            <div id="map"></div>
         </section>
-    </div>
-
-    <!-- Skrypty JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Inicjalizacja mapy
-        var map = L.map('map').setView([51.505, -0.09], 2); // Początkowy widok na mapę (szerokość, długość geograficzna)
+        // Inicjalizacja mapy Leaflet
+        const map = L.map('map').setView([51.9194, 19.1451], 6); // Domyślny widok na Polskę
 
-        // Ładowanie mapy z OpenStreetMap
+        // Dodanie warstwy kafelkowej
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Lista punktów */
+        #pointsSection {
+            padding: 1em;
+        }
+        #pointsSection h2 {
+            margin-top: 0;
+        }
+        #filter {
+            margin-bottom: 1em;
+        }
+        .point-item {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5em 0;
+        }
+        .point-item:last-child {
+            border-bottom: none;
+        }
+        .point-actions button {
+            margin-right: 0.5em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Lista punktów -->
+        <section id="pointsSection">
+            <h2>Punkty</h2>
+            <label for="filter">Filtruj według typu:</label>
+            <select id="filter">
+                <option value="all">Wszystkie</option>
+                <option value="Atrakcja">Atrakcje</option>
+                <option value="Jedzenie">Jedzenie</option>
+                <option value="Nocleg">Noclegi</option>
+                <option value="Inne">Inne</option>
+            </select>
+            <ul id="pointsList">
+                <!-- Lista punktów będzie generowana dynamicznie -->
+            </ul>
+        </section>
+    </main>
+    <script>
+        // Dane testowe dla punktów
+        const points = [
+            { id: 1, name: "Wieża Eiffla", type: "Atrakcja", address: "Paryż, Francja", cost: "200 EUR", imageURL: "https://example.com/eiffel.jpg" },
+            { id: 2, name: "Restauracja Chez Moi", type: "Jedzenie", address: "Marsylia, Francja", cost: "50 EUR", imageURL: "https://example.com/chez-moi.jpg" },
+            { id: 3, name: "Hotel Bellevue", type: "Nocleg", address: "Nicea, Francja", cost: "120 EUR", imageURL: "https://example.com/hotel.jpg" }
+        ];
+
+        const filter = document.getElementById("filter");
+        const pointsList = document.getElementById("pointsList");
+
+        // Funkcja do wyświetlania punktów na podstawie filtra
+        function displayPoints(filterValue) {
+            pointsList.innerHTML = ""; // Czyszczenie listy
+            const filteredPoints = filterValue === "all" ? points : points.filter(point => point.type === filterValue);
+            filteredPoints.forEach(point => {
+                const li = document.createElement("li");
+                li.className = "point-item";
+                li.innerHTML = `
+                    <strong>${point.name}</strong> (${point.type})<br>
+                    ${point.address}<br>
+                    Koszt: ${point.cost}<br>
+                    <div class="point-actions">
+                        <button onclick="editPoint(${point.id})">Edytuj</button>
+                        <button onclick="deletePoint(${point.id})">Usuń</button>
+                    </div>
+                `;
+                pointsList.appendChild(li);
+            });
+        }
+
+        // Obsługa zmiany filtra
+        filter.addEventListener("change", () => displayPoints(filter.value));
+
+        // Funkcje "Edytuj" i "Usuń" (placeholdery)
+        function editPoint(id) {
+            alert(`Edytowanie punktu o ID: ${id}`);
+        }
+
+        function deletePoint(id) {
+            if (confirm("Czy na pewno chcesz usunąć ten punkt?")) {
+                alert(`Usunięto punkt o ID: ${id}`);
+            }
+        }
+
+        // Inicjalne wyświetlenie punktów
+        displayPoints("all");
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Dodaj trasę */
+        #addRouteSection {
+            padding: 1em;
+        }
+        #addRouteSection h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 1em;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin: 0.3em 0;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 0.7em 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Dodaj trasę -->
+        <section id="addRouteSection">
+            <h2>Dodaj trasę</h2>
+            <form id="addRouteForm">
+                <div class="form-group">
+                    <label for="startPoint">Punkt początkowy:</label>
+                    <select id="startPoint" required>
+                        <!-- Opcje będą dynamicznie generowane -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="endPoint">Punkt końcowy:</label>
+                    <select id="endPoint" required>
+                        <!-- Opcje będą dynamicznie generowane -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="departureTime">Data i godzina odjazdu:</label>
+                    <input type="datetime-local" id="departureTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="arrivalTime">Data i godzina przyjazdu:</label>
+                    <input type="datetime-local" id="arrivalTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="routeDescription">Opis:</label>
+                    <textarea id="routeDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="routeCost">Koszt (w zł/euro):</label>
+                    <input type="number" id="routeCost" min="0" step="0.01" required>
+                </div>
+                <button type="submit">Dodaj trasę</button>
+            </form>
+        </section>
+    </main>
+    <script>
+        const startPointSelect = document.getElementById("startPoint");
+        const endPointSelect = document.getElementById("endPoint");
+
+        // Przykładowe punkty testowe - będą dynamicznie załadowane
+        const points = [
+            { id: 1, name: "Wieża Eiffla" },
+            { id: 2, name: "Restauracja Chez Moi" },
+            { id: 3, name: "Hotel Bellevue" }
+        ];
+
+        // Funkcja do załadowania punktów do dropdownów
+        function loadPoints() {
+            points.forEach(point => {
+                const optionStart = document.createElement("option");
+                optionStart.value = point.id;
+                optionStart.textContent = point.name;
+                startPointSelect.appendChild(optionStart);
+
+                const optionEnd = document.createElement("option");
+                optionEnd.value = point.id;
+                optionEnd.textContent = point.name;
+                endPointSelect.appendChild(optionEnd);
+            });
+        }
+
+        // Obsługa formularza Dodaj trasę
+        document.getElementById("addRouteForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const routeData = {
+                startPoint: startPointSelect.value,
+                endPoint: endPointSelect.value,
+                departureTime: document.getElementById("departureTime").value,
+                arrivalTime: document.getElementById("arrivalTime").value,
+                description: document.getElementById("routeDescription").value,
+                cost: document.getElementById("routeCost").value
+            };
+            console.log("Nowa trasa:", routeData);
+            alert("Trasa została dodana!");
+            this.reset(); // Resetowanie formularza
+        });
+
+        // Inicjalizacja punktów
+        loadPoints();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Lista tras */
+        #routesSection {
+            padding: 1em;
+        }
+        #routesSection h2 {
+            margin-top: 0;
+        }
+        .route-item {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5em 0;
+        }
+        .route-item:last-child {
+            border-bottom: none;
+        }
+        .route-actions button {
+            margin-right: 0.5em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Lista tras -->
+        <section id="routesSection">
+            <h2>Trasy</h2>
+            <ul id="routesList">
+                <!-- Lista tras będzie generowana dynamicznie -->
+            </ul>
+        </section>
+    </main>
+    <script>
+        // Przykładowe dane dla tras
+        const routes = [
+            {
+                id: 1,
+                start: "Wieża Eiffla",
+                end: "Restauracja Chez Moi",
+                departure: "2025-04-20T08:00",
+                arrival: "2025-04-20T10:00",
+                description: "Wycieczka do restauracji w Marsylii",
+                cost: "200 EUR"
+            },
+            {
+                id: 2,
+                start: "Restauracja Chez Moi",
+                end: "Hotel Bellevue",
+                departure: "2025-04-20T11:00",
+                arrival: "2025-04-20T13:00",
+                description: "Przejazd do hotelu w Nicei",
+                cost: "50 EUR"
+            }
+        ];
+
+        const routesList = document.getElementById("routesList");
+
+        // Funkcja do wyświetlania tras
+        function displayRoutes() {
+            routesList.innerHTML = ""; // Czyszczenie listy
+            routes.forEach(route => {
+                const li = document.createElement("li");
+                li.className = "route-item";
+                li.innerHTML = `
+                    <strong>${route.start} → ${route.end}</strong><br>
+                    Odjazd: ${new Date(route.departure).toLocaleString()}<br>
+                    Przyjazd: ${new Date(route.arrival).toLocaleString()}<br>
+                    Koszt: ${route.cost}<br>
+                    Opis: ${route.description}<br>
+                    <div class="route-actions">
+                        <button onclick="editRoute(${route.id})">Edytuj</button>
+                        <button onclick="deleteRoute(${route.id})">Usuń</button>
+                    </div>
+                `;
+                routesList.appendChild(li);
+            });
+        }
+
+        // Funkcje "Edytuj" i "Usuń" (placeholdery)
+        function editRoute(id) {
+            alert(`Edytowanie trasy o ID: ${id}`);
+        }
+
+        function deleteRoute(id) {
+            if (confirm("Czy na pewno chcesz usunąć tę trasę?")) {
+                alert(`Usunięto trasę o ID: ${id}`);
+            }
+        }
+
+        // Inicjalne wyświetlenie tras
+        displayRoutes();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Koszty łącznie */
+        #totalCostsSection {
+            padding: 1em;
+        }
+        #totalCostsSection h2 {
+            margin-top: 0;
+        }
+        .cost-category {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5em 0;
+        }
+        .cost-category:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Koszty łącznie -->
+        <section id="totalCostsSection">
+            <h2>Koszty łącznie</h2>
+            <ul id="costsList">
+                <!-- Lista kategorii kosztów będzie generowana dynamicznie -->
+            </ul>
+        </section>
+    </main>
+    <script>
+        // Dane testowe kosztów
+        const costs = [
+            { category: "Jedzenie", amount: 300 },
+            { category: "Noclegi", amount: 600 },
+            { category: "Atrakcje", amount: 200 },
+            { category: "Transport", amount: 150 },
+            { category: "Dodatkowe", amount: 100 }
+        ];
+
+        const costsList = document.getElementById("costsList");
+
+        // Funkcja do wyświetlania kosztów w podziale na kategorie
+        function displayTotalCosts() {
+            costsList.innerHTML = ""; // Czyszczenie listy
+            let totalAmount = 0;
+            costs.forEach(cost => {
+                const li = document.createElement("li");
+                li.className = "cost-category";
+                li.innerHTML = `
+                    <strong>${cost.category}</strong>: ${cost.amount} zł
+                `;
+                costsList.appendChild(li);
+                totalAmount += cost.amount;
+            });
+            const totalLi = document.createElement("li");
+            totalLi.className = "cost-category";
+            totalLi.innerHTML = `<strong>Razem</strong>: ${totalAmount} zł`;
+            costsList.appendChild(totalLi);
+        }
+
+        // Inicjalne wyświetlenie kosztów
+        displayTotalCosts();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Koszty dodatkowe */
+        #additionalCostsSection {
+            padding: 1em;
+        }
+        #additionalCostsSection h2 {
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 1em;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        input, button {
+            width: 100%;
+            padding: 0.5em;
+            box-sizing: border-box;
+        }
+        .additional-cost-item {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5em 0;
+        }
+        .additional-cost-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Koszty dodatkowe -->
+        <section id="additionalCostsSection">
+            <h2>Koszty dodatkowe</h2>
+            <form id="additionalCostsForm">
+                <div class="form-group">
+                    <label for="additionalCostDescription">Opis kosztu:</label>
+                    <input type="text" id="additionalCostDescription" required>
+                </div>
+                <div class="form-group">
+                    <label for="additionalCostAmount">Koszt (w zł/euro):</label>
+                    <input type="number" id="additionalCostAmount" min="0" step="0.01" required>
+                </div>
+                <button type="submit">Dodaj koszt</button>
+            </form>
+            <ul id="additionalCostsList">
+                <!-- Lista dodatkowych kosztów będzie generowana dynamicznie -->
+            </ul>
+        </section>
+    </main>
+    <script>
+        const additionalCostsList = document.getElementById("additionalCostsList");
+
+        // Dane dodatkowych kosztów (początkowo pusta lista)
+        const additionalCosts = [];
+
+        // Obsługa formularza Dodaj koszt
+        document.getElementById("additionalCostsForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const description = document.getElementById("additionalCostDescription").value;
+            const amount = document.getElementById("additionalCostAmount").value;
+
+            const newCost = { id: Date.now(), description, amount };
+            additionalCosts.push(newCost); // Dodanie nowego kosztu do listy
+            displayAdditionalCosts(); // Aktualizacja wyświetlanej listy
+
+            this.reset(); // Resetowanie formularza
+        });
+
+        // Funkcja do wyświetlania dodatkowych kosztów
+        function displayAdditionalCosts() {
+            additionalCostsList.innerHTML = ""; // Czyszczenie listy
+            additionalCosts.forEach(cost => {
+                const li = document.createElement("li");
+                li.className = "additional-cost-item";
+                li.innerHTML = `
+                    <strong>${cost.description}</strong>: ${cost.amount} zł<br>
+                    <button onclick="deleteAdditionalCost(${cost.id})">Usuń</button>
+                `;
+                additionalCostsList.appendChild(li);
+            });
+        }
+
+        // Usuwanie kosztu
+        function deleteAdditionalCost(id) {
+            if (confirm("Czy na pewno chcesz usunąć ten koszt?")) {
+                const index = additionalCosts.findIndex(cost => cost.id === id);
+                if (index !== -1) {
+                    additionalCosts.splice(index, 1); // Usunięcie kosztu z listy
+                    displayAdditionalCosts(); // Aktualizacja wyświetlanej listy
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla zarządzania punktami na mapie */
+        #mapSection {
+            position: relative;
+        }
+        #pointForm {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            background-color: white;
+            padding: 1em;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            display: none;
+        }
+        #pointForm .form-group {
+            margin-bottom: 1em;
+        }
+        #pointForm label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        #pointForm input, #pointForm select, #pointForm button {
+            width: 100%;
+            padding: 0.5em;
+            box-sizing: border-box;
+        }
+        .leaflet-popup-content {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Zarządzanie punktami na mapie -->
+        <section id="mapSection">
+            <h2>Mapa</h2>
+            <div id="map"></div>
+            <div id="pointForm">
+                <h3>Dodaj punkt</h3>
+                <form id="pointDetailsForm">
+                    <div class="form-group">
+                        <label for="pointName">Nazwa:</label>
+                        <input type="text" id="pointName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="pointType">Typ:</label>
+                        <select id="pointType" required>
+                            <option value="Atrakcja">Atrakcja</option>
+                            <option value="Jedzenie">Jedzenie</option>
+                            <option value="Nocleg">Nocleg</option>
+                            <option value="Inne">Inne</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pointAddress">Adres:</label>
+                        <input type="text" id="pointAddress">
+                    </div>
+                    <div class="form-group">
+                        <label for="pointCost">Koszt (w zł/euro):</label>
+                        <input type="number" id="pointCost" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="pointImageURL">URL obrazka:</label>
+                        <input type="text" id="pointImageURL">
+                    </div>
+                    <button type="submit">Dodaj</button>
+                </form>
+            </div>
+        </section>
+    </main>
+    <script>
+        const map = L.map('map').setView([51.9194, 19.1451], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Dodawanie punktów na mapie (przykładowy punkt)
-        var marker = L.circleMarker([51.505, -0.09], {
-            color: 'red',
-            radius: 10
-        }).addTo(map).bindPopup('Przykładowy punkt');
+        const pointForm = document.getElementById("pointForm");
+        const pointDetailsForm = document.getElementById("pointDetailsForm");
 
-        // Funkcja dodająca punkt na mapie
-        document.getElementById('add-point-btn').addEventListener('click', function() {
-            var latLng = map.getCenter(); // Pobierz aktualne współrzędne mapy (na przykładzie)
-            var marker = L.circleMarker(latLng, {
-                color: 'blue',
-                radius: 10
-            }).addTo(map).bindPopup('Nowy punkt');
+        // Funkcja do otwierania formularza dodawania punktu
+        map.on('click', function(e) {
+            pointForm.style.display = 'block';
+            pointForm.dataset.lat = e.latlng.lat;
+            pointForm.dataset.lng = e.latlng.lng;
+        });
+
+        // Dodanie nowego punktu na mapie
+        pointDetailsForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const pointData = {
+                name: document.getElementById("pointName").value,
+                type: document.getElementById("pointType").value,
+                address: document.getElementById("pointAddress").value,
+                cost: document.getElementById("pointCost").value,
+                imageURL: document.getElementById("pointImageURL").value,
+                lat: pointForm.dataset.lat,
+                lng: pointForm.dataset.lng
+            };
+            const marker = L.circleMarker([pointData.lat, pointData.lng], {
+                color: getColorByType(pointData.type),
+                radius: 8
+            }).addTo(map).bindPopup(`
+                <strong>${pointData.name}</strong><br>
+                Typ: ${pointData.type}<br>
+                Adres: ${pointData.address}<br>
+                Koszt: ${pointData.cost}<br>
+                <img src="${pointData.imageURL}" alt="${pointData.name}" style="max-width:100px;">
+            `);
+            pointForm.style.display = 'none';
+            pointDetailsForm.reset();
+        });
+
+        // Funkcja do pobierania koloru na podstawie typu punktu
+        function getColorByType(type) {
+            switch (type) {
+                case "Atrakcja": return "blue";
+                case "Jedzenie": return "green";
+                case "Nocleg": return "orange";
+                case "Inne": return "red";
+                default: return "gray";
+            }
+        }
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Lista punktów z edycją */
+        #editPointsSection {
+            padding: 1em;
+        }
+        #editPointsSection h2 {
+            margin-top: 0;
+        }
+        .point-item {
+            border-bottom: 1px solid #ddd;
+            padding: 0.5em 0;
+        }
+        .point-item:last-child {
+            border-bottom: none;
+        }
+        .point-actions button {
+            margin-right: 0.5em;
+            cursor: pointer;
+        }
+        #editPointForm {
+            display: none;
+            margin-top: 1em;
+            border: 1px solid #ddd;
+            padding: 1em;
+            background-color: #f9f9f9;
+        }
+        #editPointForm input, #editPointForm select, #editPointForm button {
+            width: 100%;
+            padding: 0.5em;
+            margin: 0.5em 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Edycja i usuwanie punktów -->
+        <section id="editPointsSection">
+            <h2>Edycja punktów</h2>
+            <ul id="editPointsList">
+                <!-- Lista punktów będzie generowana dynamicznie -->
+            </ul>
+            <form id="editPointForm">
+                <h3>Edytuj punkt</h3>
+                <input type="hidden" id="editPointId">
+                <label for="editPointName">Nazwa:</label>
+                <input type="text" id="editPointName" required>
+                <label for="editPointType">Typ:</label>
+                <select id="editPointType" required>
+                    <option value="Atrakcja">Atrakcja</option>
+                    <option value="Jedzenie">Jedzenie</option>
+                    <option value="Nocleg">Nocleg</option>
+                    <option value="Inne">Inne</option>
+                </select>
+                <label for="editPointAddress">Adres:</label>
+                <input type="text" id="editPointAddress">
+                <label for="editPointCost">Koszt (w zł/euro):</label>
+                <input type="number" id="editPointCost" min="0" step="0.01">
+                <button type="submit">Zapisz zmiany</button>
+            </form>
+        </section>
+    </main>
+    <script>
+        const editPointsList = document.getElementById("editPointsList");
+        const editPointForm = document.getElementById("editPointForm");
+
+        // Przykładowe dane punktów
+        const points = [
+            { id: 1, name: "Wieża Eiffla", type: "Atrakcja", address: "Paryż, Francja", cost: "200 EUR" },
+            { id: 2, name: "Restauracja Chez Moi", type: "Jedzenie", address: "Marsylia, Francja", cost: "50 EUR" },
+            { id: 3, name: "Hotel Bellevue", type: "Nocleg", address: "Nicea, Francja", cost: "120 EUR" }
+        ];
+
+        // Funkcja do wyświetlania listy punktów
+        function displayEditPoints() {
+            editPointsList.innerHTML = ""; // Czyszczenie listy
+            points.forEach(point => {
+                const li = document.createElement("li");
+                li.className = "point-item";
+                li.innerHTML = `
+                    <strong>${point.name}</strong> (${point.type})<br>
+                    ${point.address}<br>
+                    Koszt: ${point.cost}<br>
+                    <div class="point-actions">
+                        <button onclick="editPoint(${point.id})">Edytuj</button>
+                        <button onclick="deletePoint(${point.id})">Usuń</button>
+                    </div>
+                `;
+                editPointsList.appendChild(li);
+            });
+        }
+
+        // Edycja punktu
+        function editPoint(id) {
+            const point = points.find(p => p.id === id);
+            if (point) {
+                document.getElementById("editPointId").value = point.id;
+                document.getElementById("editPointName").value = point.name;
+                document.getElementById("editPointType").value = point.type;
+                document.getElementById("editPointAddress").value = point.address;
+                document.getElementById("editPointCost").value = point.cost;
+                editPointForm.style.display = "block";
+            }
+        }
+
+        // Zapisanie zmian
+        editPointForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById("editPointId").value);
+            const updatedPoint = {
+                id,
+                name: document.getElementById("editPointName").value,
+                type: document.getElementById("editPointType").value,
+                address: document.getElementById("editPointAddress").value,
+                cost: document.getElementById("editPointCost").value
+            };
+            const index = points.findIndex(p => p.id === id);
+            if (index !== -1) {
+                points[index] = updatedPoint;
+                displayEditPoints();
+                editPointForm.reset();
+                editPointForm.style.display = "none";
+            }
+        });
+
+        // Usunięcie punktu
+        function deletePoint(id) {
+            if (confirm("Czy na pewno chcesz usunąć ten punkt?")) {
+                const index = points.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    points.splice(index, 1);
+                    displayEditPoints();
+                }
+            }
+        }
+
+        // Inicjalne wyświetlenie listy punktów
+        displayEditPoints();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Wizualizacja tras */
+        #routesVisualization {
+            padding: 1em;
+        }
+        #routesVisualization h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Wizualizacja tras na mapie -->
+        <section id="routesVisualization">
+            <h2>Wizualizacja tras</h2>
+            <p>Dodane trasy będą wyświetlane na mapie jako linie łączące punkty.</p>
+        </section>
+        <!-- Mapa -->
+        <div id="map" style="height: 50vh; width: 100%;"></div>
+    </main>
+    <script>
+        const map = L.map('map').setView([51.9194, 19.1451], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Punkty do wizualizacji tras
+        const points = [
+            { id: 1, name: "Wieża Eiffla", lat: 48.8584, lng: 2.2945 },
+            { id: 2, name: "Restauracja Chez Moi", lat: 43.2965, lng: 5.3698 },
+            { id: 3, name: "Hotel Bellevue", lat: 43.7000, lng: 7.2500 }
+        ];
+
+        // Przykładowe trasy
+        const routes = [
+            { startPointId: 1, endPointId: 2, color: 'blue' },
+            { startPointId: 2, endPointId: 3, color: 'green' }
+        ];
+
+        // Funkcja do wizualizacji tras na mapie
+        function visualizeRoutes() {
+            routes.forEach(route => {
+                const startPoint = points.find(point => point.id === route.startPointId);
+                const endPoint = points.find(point => point.id === route.endPointId);
+
+                if (startPoint && endPoint) {
+                    const polyline = L.polyline(
+                        [[startPoint.lat, startPoint.lng], [endPoint.lat, endPoint.lng]],
+                        { color: route.color }
+                    ).addTo(map);
+
+                    polyline.bindPopup(`
+                        <strong>Trasa</strong><br>
+                        Od: ${startPoint.name}<br>
+                        Do: ${endPoint.name}
+                    `);
+                }
+            });
+        }
+
+        // Dodanie punktów na mapie
+        points.forEach(point => {
+            L.marker([point.lat, point.lng]).addTo(map).bindPopup(point.name);
+        });
+
+        // Wizualizacja tras
+        visualizeRoutes();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Stylizacja dla sekcji Wykresy */
+        #chartsSection {
+            padding: 1em;
+            text-align: center;
+        }
+        #chartsSection canvas {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Wykresy kosztów -->
+        <section id="chartsSection">
+            <h2>Podsumowanie kosztów</h2>
+            <canvas id="costsChart"></canvas>
+        </section>
+    </main>
+    <script>
+        // Dane testowe do wykresu kosztów
+        const costsData = {
+            categories: ["Jedzenie", "Noclegi", "Atrakcje", "Transport", "Dodatkowe"],
+            values: [300, 600, 200, 150, 100] // Koszty w zł
+        };
+
+        // Funkcja do generowania wykresu
+        function renderCostsChart() {
+            const ctx = document.getElementById('costsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie', // Typ wykresu
+                data: {
+                    labels: costsData.categories,
+                    datasets: [{
+                        data: costsData.values,
+                        backgroundColor: ['#4CAF50', '#FF5722', '#2196F3', '#FFC107', '#9C27B0'],
+                        hoverBackgroundColor: ['#66BB6A', '#FF7043', '#42A5F5', '#FFD54F', '#AB47BC']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Inicjalizacja wykresu
+        renderCostsChart();
+    </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Eksport danych */
+        #exportSection {
+            padding: 1em;
+            text-align: center;
+        }
+        #exportSection button {
+            padding: 0.7em 1em;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #exportSection button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Eksport danych -->
+        <section id="exportSection">
+            <h2>Eksport danych</h2>
+            <button id="exportButton">Eksportuj dane do JSON</button>
+        </section>
+    </main>
+    <script>
+        // Przykładowe dane aplikacji
+        const appData = {
+            points: [
+                { id: 1, name: "Wieża Eiffla", type: "Atrakcja", address: "Paryż, Francja", cost: "200 EUR", lat: 48.8584, lng: 2.2945 },
+                { id: 2, name: "Restauracja Chez Moi", type: "Jedzenie", address: "Marsylia, Francja", cost: "50 EUR", lat: 43.2965, lng: 5.3698 }
+            ],
+            routes: [
+                { startPointId: 1, endPointId: 2, departure: "2025-04-20T08:00", arrival: "2025-04-20T10:00", cost: "200 EUR" }
+            ],
+            costs: {
+                total: 250,
+                categories: [
+                    { category: "Jedzenie", amount: 50 },
+                    { category: "Atrakcje", amount: 200 }
+                ]
+            }
+        };
+
+        // Eksport danych do JSON
+        document.getElementById("exportButton").addEventListener("click", () => {
+            const jsonData = JSON.stringify(appData, null, 2); // Formatowanie danych do JSON
+            const blob = new Blob([jsonData], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "PodrozGosiMateusza.json";
+            link.click();
+            URL.revokeObjectURL(link.href); // Zwolnienie zasobów
         });
     </script>
 </body>
 </html>
-<!-- MODAL DODAWANIA PUNKTU -->
-<div id="pointModal" style="display:none; position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
-    background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.3); z-index: 1000;">
-    <h3>Dodaj punkt</h3>
-    <form id="pointForm">
-        <input type="text" id="pointName" placeholder="Nazwa" required><br><br>
-        <select id="pointType" required>
-            <option value="">Typ</option>
-            <option value="Atrakcja">Atrakcja</option>
-            <option value="Jedzenie">Jedzenie</option>
-            <option value="Nocleg">Nocleg</option>
-            <option value="Inne">Inne</option>
-        </select><br><br>
-        <textarea id="pointDesc" placeholder="Opis"></textarea><br><br>
-        <input type="text" id="pointAddress" placeholder="Adres"><br><br>
-        <input type="number" id="pointCost" placeholder="Koszt (zł/€)"><br><br>
-        <input type="url" id="pointImg" placeholder="URL obrazka"><br><br>
-        <button type="submit" class="btn">Zapisz</button>
-        <button type="button" class="btn" onclick="closeModal()">Anuluj</button>
-    </form>
-</div>
-
-<script>
-    // PUNKTY: dane i kolory wg typu
-    let points = [];
-    const pointColors = {
-        "Atrakcja": "orange",
-        "Jedzenie": "green",
-        "Nocleg": "blue",
-        "Inne": "purple"
-    };
-
-    // Obsługa kliknięcia na mapie – otwórz modal
-    map.on('click', function(e) {
-        selectedLatLng = e.latlng;
-        openModal();
-    });
-
-    // Otwórz modal
-    function openModal() {
-        document.getElementById('pointModal').style.display = 'block';
-    }
-
-    // Zamknij modal
-    function closeModal() {
-        document.getElementById('pointForm').reset();
-        document.getElementById('pointModal').style.display = 'none';
-    }
-
-    // Dodanie punktu z formularza
-    document.getElementById('pointForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const point = {
-            id: Date.now(),
-            name: document.getElementById('pointName').value,
-            type: document.getElementById('pointType').value,
-            desc: document.getElementById('pointDesc').value,
-            address: document.getElementById('pointAddress').value,
-            cost: parseFloat(document.getElementById('pointCost').value) || 0,
-            img: document.getElementById('pointImg').value,
-            latlng: selectedLatLng
-        };
-        points.push(point);
-        addMarkerToMap(point);
-        closeModal();
-    });
-
-    // Dodaj znacznik na mapę
-    function addMarkerToMap(point) {
-        const color = pointColors[point.type] || "gray";
-        const marker = L.circleMarker(point.latlng, {
-            color: color,
-            radius: 10
-        }).addTo(map).bindPopup(`
-            <strong>${point.name}</strong><br>
-            ${point.type}<br>
-            ${point.desc}<br>
-            ${point.address}<br>
-            ${point.cost} zł/€<br>
-            ${point.img ? `<img src="${point.img}" width="100">` : ''}
-        `);
-    }
-</script>
-<!-- SEKSCJA: Lista Punktów -->
-<section id="points-section" class="container">
-    <h2>Punkty</h2>
-
-    <label for="filterType">Filtruj po typie:</label>
-    <select id="filterType">
-        <option value="">Wszystkie</option>
-        <option value="Atrakcja">Atrakcje</option>
-        <option value="Jedzenie">Jedzenie</option>
-        <option value="Nocleg">Noclegi</option>
-        <option value="Inne">Inne</option>
-    </select>
-
-    <div id="pointsList"></div>
-</section>
-
-<script>
-    let editingPointId = null;
-
-    // Renderowanie listy punktów
-    function renderPointsList() {
-        const filter = document.getElementById('filterType').value;
-        const listDiv = document.getElementById('pointsList');
-        listDiv.innerHTML = '';
-
-        const filteredPoints = filter
-            ? points.filter(p => p.type === filter)
-            : points;
-
-        if (filteredPoints.length === 0) {
-            listDiv.innerHTML = '<p>Brak punktów.</p>';
-            return;
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <style>
+        /* Stylizacja dla sekcji Użytkownicy */
+        #userSection {
+            padding: 1em;
+            text-align: center;
         }
+        #userSection form {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: left;
+        }
+        #userSection input, #userSection button {
+            width: 100%;
+            padding: 0.5em;
+            margin: 0.5em 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <!-- Sekcja: Użytkownicy -->
+        <section id="userSection">
+            <h2>Dane użytkownika</h2>
+            <form id="userForm">
+                <label for="userName">Imię:</label>
+                <input type="text" id="userName" required>
+                <label for="favoritePlace">Ulubione miejsce podróży:</label>
+                <input type="text" id="favoritePlace" required>
+                <button type="submit">Zapisz dane</button>
+            </form>
+            <div id="userDisplay" style="margin-top: 1em;">
+                <!-- Wyświetlanie danych użytkownika -->
+            </div>
+        </section>
+    </main>
+    <script>
+        const userForm = document.getElementById("userForm");
+        const userDisplay = document.getElementById("userDisplay");
 
-        filteredPoints.forEach(p => {
-            const pointEl = document.createElement('div');
-            pointEl.style = "border: 1px solid #ccc; margin: 10px 0; padding: 10px; border-radius: 8px;";
-            pointEl.innerHTML = `
-                <strong>${p.name}</strong> (${p.type})<br>
-                ${p.desc}<br>
-                ${p.address}<br>
-                Koszt: ${p.cost} zł/€<br>
-                ${p.img ? `<img src="${p.img}" width="100">` : ''}
-                <br><br>
-                <button class="btn" onclick="editPoint(${p.id})">Edytuj</button>
-                <button class="btn" onclick="confirmDeletePoint(${p.id})">Usuń</button>
-            `;
-            listDiv.appendChild(pointEl);
+        // Obsługa formularza
+        userForm.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const userName = document.getElementById("userName").value;
+            const favoritePlace = document.getElementById("favoritePlace").value;
+
+            // Zapis danych w localStorage
+            localStorage.setItem("userName", userName);
+            localStorage.setItem("favoritePlace", favoritePlace);
+
+            displayUserData(); // Wyświetlanie zapisanych danych
+            userForm.reset();
         });
-    }
 
-    // Obsługa usuwania
-    function confirmDeletePoint(id) {
-        if (confirm("Czy na pewno chcesz usunąć?")) {
-            points = points.filter(p => p.id !== id);
-            renderPointsList();
-            refreshMapMarkers();
-        }
-    }
+        // Funkcja do wyświetlania zapisanych danych
+        function displayUserData() {
+            const userName = localStorage.getItem("userName");
+            const favoritePlace = localStorage.getItem("favoritePlace");
 
-    // Obsługa edycji
-    function editPoint(id) {
-        const point = points.find(p => p.id === id);
-        if (!point) return;
-
-        editingPointId = id;
-
-        document.getElementById('pointName').value = point.name;
-        document.getElementById('pointType').value = point.type;
-        document.getElementById('pointDesc').value = point.desc;
-        document.getElementById('pointAddress').value = point.address;
-        document.getElementById('pointCost').value = point.cost;
-        document.getElementById('pointImg').value = point.img;
-        selectedLatLng = point.latlng;
-
-        openModal();
-    }
-
-    // Modyfikacja zapisująca edytowany punkt
-    document.getElementById('pointForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const data = {
-            name: document.getElementById('pointName').value,
-            type: document.getElementById('pointType').value,
-            desc: document.getElementById('pointDesc').value,
-            address: document.getElementById('pointAddress').value,
-            cost: parseFloat(document.getElementById('pointCost').value) || 0,
-            img: document.getElementById('pointImg').value,
-            latlng: selectedLatLng
-        };
-
-        if (editingPointId !== null) {
-            const index = points.findIndex(p => p.id === editingPointId);
-            points[index] = { ...points[index], ...data };
-            editingPointId = null;
-        } else {
-            points.push({ ...data, id: Date.now() });
-        }
-
-        closeModal();
-        renderPointsList();
-        refreshMapMarkers();
-    });
-
-    // Odświeżenie znaczników na mapie
-    function refreshMapMarkers() {
-        map.eachLayer(layer => {
-            if (layer instanceof L.CircleMarker) {
-                map.removeLayer(layer);
+            if (userName && favoritePlace) {
+                userDisplay.innerHTML = `
+                    <p><strong>Imię:</strong> ${userName}</p>
+                    <p><strong>Ulubione miejsce podróży:</strong> ${favoritePlace}</p>
+                `;
+            } else {
+                userDisplay.innerHTML = `<p>Brak zapisanych danych użytkownika.</p>`;
             }
-        });
-
-        points.forEach(p => addMarkerToMap(p));
-    }
-
-    document.getElementById('filterType').addEventListener('change', renderPointsList);
-</script>
-<!-- SEKCJA: Dodaj trasę -->
-<section id="add-route-section" class="container">
-    <h2>Dodaj trasę</h2>
-    <form id="routeForm">
-        <label>Punkt początkowy:</label>
-        <select id="startPoint" required></select><br><br>
-
-        <label>Punkt końcowy:</label>
-        <select id="endPoint" required></select><br><br>
-
-        <label>Data i godzina odjazdu:</label>
-        <input type="datetime-local" id="startTime" required><br><br>
-
-        <label>Data i godzina przyjazdu:</label>
-        <input type="datetime-local" id="endTime" required><br><br>
-
-        <label>Opis:</label>
-        <textarea id="routeDesc" placeholder="Opis trasy"></textarea><br><br>
-
-        <label>Koszt (zł/€):</label>
-        <input type="number" id="routeCost" required><br><br>
-
-        <button type="submit" class="btn">Dodaj trasę</button>
-    </form>
-</section>
-
-<script>
-    let routes = [];
-
-    // Uzupełnij listę dostępnych punktów w formularzu trasy
-    function updateRoutePointOptions() {
-        const startSelect = document.getElementById('startPoint');
-        const endSelect = document.getElementById('endPoint');
-        startSelect.innerHTML = '';
-        endSelect.innerHTML = '';
-
-        points.forEach(p => {
-            const optionStart = document.createElement('option');
-            const optionEnd = document.createElement('option');
-            optionStart.value = p.id;
-            optionStart.textContent = p.name;
-            optionEnd.value = p.id;
-            optionEnd.textContent = p.name;
-            startSelect.appendChild(optionStart);
-            endSelect.appendChild(optionEnd);
-        });
-    }
-
-    // Obsługa formularza dodawania trasy
-    document.getElementById('routeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const startId = parseInt(document.getElementById('startPoint').value);
-        const endId = parseInt(document.getElementById('endPoint').value);
-        const startPoint = points.find(p => p.id === startId);
-        const endPoint = points.find(p => p.id === endId);
-
-        if (!startPoint || !endPoint || startId === endId) {
-            alert("Wybierz dwa różne punkty.");
-            return;
         }
 
-        const route = {
-            id: Date.now(),
-            start: startPoint,
-            end: endPoint,
-            startTime: document.getElementById('startTime').value,
-            endTime: document.getElementById('endTime').value,
-            desc: document.getElementById('routeDesc').value,
-            cost: parseFloat(document.getElementById('routeCost').value) || 0
-        };
-
-        routes.push(route);
-        drawRouteOnMap(route);
-        renderRouteList();
-        document.getElementById('routeForm').reset();
-    });
-
-    // Narysuj trasę na mapie
-    function drawRouteOnMap(route) {
-        const polyline = L.polyline([
-            route.start.latlng,
-            route.end.latlng
-        ], { color: 'red', weight: 4 }).addTo(map);
-
-        route.polyline = polyline;
-    }
-
-    // Odświeżenie list wyboru punktów przy każdej zmianie punktów
-    // Wywołaj np. po renderPointsList()
-    // Można też dodać np. do closeModal()
-    document.getElementById('pointForm').addEventListener('submit', () => {
-        setTimeout(updateRoutePointOptions, 0);
-    });
-</script>
-<!-- SEKCJA: Lista tras -->
-<section id="route-list-section" class="container">
-    <h2>Trasy</h2>
-    <div id="routesList"></div>
-</section>
-
-<script>
-    let editingRouteId = null;
-
-    function renderRouteList() {
-        const listDiv = document.getElementById('routesList');
-        listDiv.innerHTML = '';
-
-        if (routes.length === 0) {
-            listDiv.innerHTML = '<p>Brak tras.</p>';
-            return;
-        }
-
-        routes.forEach(r => {
-            const routeEl = document.createElement('div');
-            routeEl.style = "border: 1px solid #ddd; margin: 10px 0; padding: 10px; border-radius: 8px;";
-            routeEl.innerHTML = `
-                <strong>${r.start.name}</strong> → <strong>${r.end.name}</strong><br>
-                Od: ${new Date(r.startTime).toLocaleString()}<br>
-                Do: ${new Date(r.endTime).toLocaleString()}<br>
-                Opis: ${r.desc}<br>
-                Koszt: ${r.cost} zł/€<br><br>
-                <button class="btn" onclick="editRoute(${r.id})">Edytuj</button>
-                <button class="btn" onclick="confirmDeleteRoute(${r.id})">Usuń</button>
-            `;
-            listDiv.appendChild(routeEl);
-        });
-    }
-
-    // Usuwanie trasy
-    function confirmDeleteRoute(id) {
-        if (confirm("Czy na pewno chcesz usunąć tę trasę?")) {
-            const route = routes.find(r => r.id === id);
-            if (route.polyline) {
-                map.removeLayer(route.polyline);
-            }
-            routes = routes.filter(r => r.id !== id);
-            renderRouteList();
-        }
-    }
-
-    // Edycja trasy
-    function editRoute(id) {
-        const route = routes.find(r => r.id === id);
-        if (!route) return;
-
-        editingRouteId = id;
-
-        document.getElementById('startPoint').value = route.start.id;
-        document.getElementById('endPoint').value = route.end.id;
-        document.getElementById('startTime').value = route.startTime;
-        document.getElementById('endTime').value = route.endTime;
-        document.getElementById('routeDesc').value = route.desc;
-        document.getElementById('routeCost').value = route.cost;
-
-        document.querySelector('#add-route-section h2').innerText = 'Edytuj trasę';
-        document.querySelector('#routeForm button').innerText = 'Zapisz zmiany';
-    }
-
-    // Obsługa edycji w formularzu
-    document.getElementById('routeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const startId = parseInt(document.getElementById('startPoint').value);
-        const endId = parseInt(document.getElementById('endPoint').value);
-        const startPoint = points.find(p => p.id === startId);
-        const endPoint = points.find(p => p.id === endId);
-
-        if (!startPoint || !endPoint || startId === endId) {
-            alert("Wybierz dwa różne punkty.");
-            return;
-        }
-
-        const data = {
-            start: startPoint,
-            end: endPoint,
-            startTime: document.getElementById('startTime').value,
-            endTime: document.getElementById('endTime').value,
-            desc: document.getElementById('routeDesc').value,
-            cost: parseFloat(document.getElementById('routeCost').value) || 0
-        };
-
-        if (editingRouteId !== null) {
-            const index = routes.findIndex(r => r.id === editingRouteId);
-            const oldRoute = routes[index];
-            if (oldRoute.polyline) map.removeLayer(oldRoute.polyline);
-
-            routes[index] = { ...routes[index], ...data };
-            drawRouteOnMap(routes[index]);
-
-            editingRouteId = null;
-            document.querySelector('#add-route-section h2').innerText = 'Dodaj trasę';
-            document.querySelector('#routeForm button').innerText = 'Dodaj trasę';
-        } else {
-            const newRoute = {
-                id: Date.now(),
-                ...data
-            };
-            routes.push(newRoute);
-            drawRouteOnMap(newRoute);
-        }
-
-        renderRouteList();
-        document.getElementById('routeForm').reset();
-    });
-</script>
-<!-- SEKCJA: Koszty łącznie -->
-<section id="summary-costs-section" class="container">
-    <h2>Koszty łącznie</h2>
-    <div id="totalCosts">
-        <ul id="costList">
-            <li>Jedzenie: <span id="costFood">0</span> zł/€</li>
-            <li>Noclegi: <span id="costLodging">0</span> zł/€</li>
-            <li>Atrakcje: <span id="costAttractions">0</span> zł/€</li>
-            <li>Transport: <span id="costTransport">0</span> zł/€</li>
-            <li>Inne: <span id="costOther">0</span> zł/€</li>
-            <li>Dodatkowe: <span id="costExtra">0</span> zł/€</li>
-        </ul>
-    </div>
-</section>
-
-<script>
-    let extraCosts = [];
-
-    function calculateCosts() {
-        let food = 0, lodging = 0, attractions = 0, other = 0, transport = 0, extra = 0;
-
-        // Koszty z punktów
-        points.forEach(p => {
-            const c = parseFloat(p.cost) || 0;
-            switch (p.type) {
-                case 'Jedzenie': food += c; break;
-                case 'Nocleg': lodging += c; break;
-                case 'Atrakcja': attractions += c; break;
-                case 'Inne': other += c; break;
-            }
-        });
-
-        // Koszty z tras (transport)
-        routes.forEach(r => {
-            transport += parseFloat(r.cost) || 0;
-        });
-
-        // Koszty dodatkowe
-        extraCosts.forEach(ec => {
-            extra += parseFloat(ec.cost) || 0;
-        });
-
-        // Wyświetl wyniki
-        document.getElementById('costFood').textContent = food.toFixed(2);
-        document.getElementById('costLodging').textContent = lodging.toFixed(2);
-        document.getElementById('costAttractions').textContent = attractions.toFixed(2);
-        document.getElementById('costTransport').textContent = transport.toFixed(2);
-        document.getElementById('costOther').textContent = other.toFixed(2);
-        document.getElementById('costExtra').textContent = extra.toFixed(2);
-    }
-
-    // Automatyczna aktualizacja kosztów przy dodaniu/usunięciu punktu/trasy/kosztu
-    const recalculateAll = () => {
-        renderPointsList();
-        renderRouteList();
-        calculateCosts();
-    };
-
-    // Dodaj wywołania funkcji `calculateCosts()` po każdej aktualizacji danych
-    // Przykład:
-    // - po `routes.push(...)` => call `calculateCosts()`
-    // - po `points.push(...)` => call `calculateCosts()`
-    // - po `extraCosts.push(...)` => call `calculateCosts()`
-</script>
-<!-- SEKCJA: Koszty dodatkowe -->
-<section id="extra-costs-section" class="container">
-  <h2>Koszty dodatkowe</h2>
-
-  <form id="extraCostForm">
-    <label>Opis kosztu:
-      <input type="text" id="extraDesc" required />
-    </label>
-    <label>Koszt (zł/€):
-      <input type="number" id="extraCost" required />
-    </label>
-    <button type="submit" class="btn">Dodaj koszt</button>
-  </form>
-
-  <div id="extraCostsList" style="margin-top:1em;"></div>
-</section>
-
-<script>
-  let editingExtraId = null;
-
-  function renderExtraCosts() {
-    const container = document.getElementById('extraCostsList');
-    container.innerHTML = '';
-
-    if (extraCosts.length === 0) {
-      container.innerHTML = '<p>Brak dodatkowych kosztów.</p>';
-      return;
-    }
-
-    extraCosts.forEach(ec => {
-      const div = document.createElement('div');
-      div.className = 'extra-cost-item';
-      div.style = "border:1px solid #ccc; padding:10px; margin-bottom:10px; border-radius:8px;";
-      div.innerHTML = `
-        <strong>${ec.desc}</strong> – ${ec.cost.toFixed(2)} zł/€
-        <br>
-        <button class="btn" onclick="editExtraCost(${ec.id})">Edytuj</button>
-        <button class="btn" onclick="confirmDeleteExtra(${ec.id})">Usuń</button>
-      `;
-      container.appendChild(div);
-    });
-  }
-
-  function confirmDeleteExtra(id) {
-    if (confirm("Czy na pewno chcesz usunąć ten koszt?")) {
-      extraCosts = extraCosts.filter(e => e.id !== id);
-      renderExtraCosts();
-      calculateCosts();
-    }
-  }
-
-  function editExtraCost(id) {
-    const cost = extraCosts.find(e => e.id === id);
-    if (!cost) return;
-
-    document.getElementById('extraDesc').value = cost.desc;
-    document.getElementById('extraCost').value = cost.cost;
-    editingExtraId = id;
-    document.querySelector('#extra-costs-section button').innerText = 'Zapisz zmiany';
-  }
-
-  document.getElementById('extraCostForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const desc = document.getElementById('extraDesc').value.trim();
-    const cost = parseFloat(document.getElementById('extraCost').value) || 0;
-
-    if (!desc) return;
-
-    if (editingExtraId !== null) {
-      const index = extraCosts.findIndex(e => e.id === editingExtraId);
-      extraCosts[index] = { id: editingExtraId, desc, cost };
-      editingExtraId = null;
-      document.querySelector('#extra-costs-section button').innerText = 'Dodaj koszt';
-    } else {
-      extraCosts.push({ id: Date.now(), desc, cost });
-    }
-
-    document.getElementById('extraCostForm').reset();
-    renderExtraCosts();
-    calculateCosts();
-  });
-</script>
-<!-- SEKCJA: Lista punktów -->
-<section id="points-list-section" class="container">
-  <h2>Punkty</h2>
-
-  <label for="filterType">Filtruj według typu:</label>
-  <select id="filterType">
-    <option value="Wszystko">Wszystko</option>
-    <option value="Atrakcja">Atrakcja</option>
-    <option value="Jedzenie">Jedzenie</option>
-    <option value="Nocleg">Nocleg</option>
-    <option value="Inne">Inne</option>
-  </select>
-
-  <div id="pointsList" style="margin-top: 1em;"></div>
-</section>
-
-<script>
-  const pointTypesColors = {
-    "Atrakcja": "red",
-    "Jedzenie": "orange",
-    "Nocleg": "blue",
-    "Inne": "gray"
-  };
-
-  function renderPointsList() {
-    const list = document.getElementById('pointsList');
-    list.innerHTML = '';
-
-    const filter = document.getElementById('filterType').value;
-    const filtered = filter === 'Wszystko' ? points : points.filter(p => p.type === filter);
-
-    if (filtered.length === 0) {
-      list.innerHTML = '<p>Brak punktów do wyświetlenia.</p>';
-      return;
-    }
-
-    filtered.forEach(point => {
-      const div = document.createElement('div');
-      div.className = 'point-entry';
-      div.style = `border: 1px solid ${pointTypesColors[point.type] || 'black'}; border-radius: 8px; padding: 10px; margin-bottom: 10px;`;
-
-      div.innerHTML = `
-        <strong>${point.name}</strong> (${point.type})<br>
-        Adres: ${point.address}<br>
-        Koszt: ${point.cost} zł/€<br>
-        <a href="${point.image}" target="_blank">Obrazek</a><br>
-        <button class="btn" onclick="editPoint(${point.id})">Edytuj</button>
-        <button class="btn" onclick="confirmDeletePoint(${point.id})">Usuń</button>
-      `;
-
-      list.appendChild(div);
-    });
-  }
-
-  function confirmDeletePoint(id) {
-    if (confirm("Czy na pewno chcesz usunąć ten punkt?")) {
-      const index = points.findIndex(p => p.id === id);
-      if (index !== -1) {
-        map.removeLayer(points[index].marker);
-        points.splice(index, 1);
-        recalculateAll();
-      }
-    }
-  }
-
-  function editPoint(id) {
-    const point = points.find(p => p.id === id);
-    if (!point) return;
-
-    // Pokazujemy formularz edycji punktu (użytkownik może np. kliknąć na mapie lub dodać modal)
-    alert("Tryb edycji dla punktu: " + point.name + "\n(Podłącz modal/formularz edycji punktu w przyszłych częściach)");
-  }
-
-  // Obsługa filtrowania po typie
-  document.getElementById('filterType').addEventListener('change', renderPointsList);
-</script>
-<!-- MODAL: Edycja punktu -->
-<div id="editPointModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <h3>Edytuj punkt</h3>
-    <form id="editPointForm">
-      <label>Nazwa:
-        <input type="text" id="editName" required />
-      </label>
-      <label>Typ:
-        <select id="editType">
-          <option value="Atrakcja">Atrakcja</option>
-          <option value="Jedzenie">Jedzenie</option>
-          <option value="Nocleg">Nocleg</option>
-          <option value="Inne">Inne</option>
-        </select>
-      </label>
-      <label>Adres:
-        <input type="text" id="editAddress" />
-      </label>
-      <label>Koszt (zł/€):
-        <input type="number" id="editCost" />
-      </label>
-      <label>URL obrazka:
-        <input type="url" id="editImage" />
-      </label>
-      <div style="margin-top: 1em;">
-        <button type="submit" class="btn">Zapisz</button>
-        <button type="button" class="btn" onclick="closeEditModal()">Anuluj</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<style>
-  .modal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
-  }
-  .modal-content {
-    background: white;
-    padding: 20px;
-    max-width: 400px;
-    border-radius: 12px;
-    box-shadow: 0 0 10px #0003;
-  }
-  .modal-content input, .modal-content select {
-    width: 100%;
-    margin-bottom: 10px;
-  }
-</style>
-
-<script>
-  let editingPointId = null;
-
-  function editPoint(id) {
-    const point = points.find(p => p.id === id);
-    if (!point) return;
-
-    editingPointId = id;
-    document.getElementById('editName').value = point.name;
-    document.getElementById('editType').value = point.type;
-    document.getElementById('editAddress').value = point.address;
-    document.getElementById('editCost').value = point.cost;
-    document.getElementById('editImage').value = point.image;
-
-    document.getElementById('editPointModal').style.display = 'flex';
-  }
-
-  function closeEditModal() {
-    editingPointId = null;
-    document.getElementById('editPointModal').style.display = 'none';
-    document.getElementById('editPointForm').reset();
-  }
-
-  document.getElementById('editPointForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const updated = {
-      name: document.getElementById('editName').value.trim(),
-      type: document.getElementById('editType').value,
-      address: document.getElementById('editAddress').value.trim(),
-      cost: parseFloat(document.getElementById('editCost').value) || 0,
-      image: document.getElementById('editImage').value.trim(),
-    };
-
-    const index = points.findIndex(p => p.id === editingPointId);
-    if (index !== -1) {
-      const old = points[index];
-      old.name = updated.name;
-      old.type = updated.type;
-      old.address = updated.address;
-      old.cost = updated.cost;
-      old.image = updated.image;
-
-      // Aktualizuj znacznik na mapie
-      const icon = createCustomIcon(updated.type);
-      const popup = generatePopupContent(old);
-      map.removeLayer(old.marker);
-      const newMarker = L.marker(old.latlng, { icon }).bindPopup(popup);
-      newMarker.addTo(map);
-      old.marker = newMarker;
-
-      closeEditModal();
-      renderPointsList();
-      calculateCosts();
-    }
-  });
-</script>
-<!-- SEKCJA: Dodaj trasę -->
-<section id="add-route-section" class="container">
-  <h2>Dodaj trasę</h2>
-  <form id="routeForm">
-    <label>Punkt początkowy:
-      <select id="routeStart" required></select>
-    </label>
-    <label>Punkt końcowy:
-      <select id="routeEnd" required></select>
-    </label>
-    <label>Data i godzina odjazdu:
-      <input type="datetime-local" id="routeStartTime" required />
-    </label>
-    <label>Data i godzina przyjazdu:
-      <input type="datetime-local" id="routeEndTime" required />
-    </label>
-    <label>Opis trasy:
-      <textarea id="routeDescription"></textarea>
-    </label>
-    <label>Koszt (zł/€):
-      <input type="number" id="routeCost" />
-    </label>
-    <button type="submit" class="btn">Dodaj trasę</button>
-  </form>
-</section>
-
-<script>
-  const routes = [];
-
-  function updateRouteSelectors() {
-    const startSelect = document.getElementById('routeStart');
-    const endSelect = document.getElementById('routeEnd');
-    startSelect.innerHTML = '';
-    endSelect.innerHTML = '';
-
-    points.forEach(point => {
-      const option = `<option value="${point.id}">${point.name} (${point.type})</option>`;
-      startSelect.innerHTML += option;
-      endSelect.innerHTML += option;
-    });
-  }
-
-  function getPointById(id) {
-    return points.find(p => p.id == id);
-  }
-
-  document.getElementById('routeForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const startId = document.getElementById('routeStart').value;
-    const endId = document.getElementById('routeEnd').value;
-
-    if (startId === endId) {
-      alert("Punkt początkowy i końcowy nie mogą być takie same.");
-      return;
-    }
-
-    const startPoint = getPointById(startId);
-    const endPoint = getPointById(endId);
-    if (!startPoint || !endPoint) return;
-
-    const newRoute = {
-      id: Date.now(),
-      startId: startPoint.id,
-      endId: endPoint.id,
-      startTime: document.getElementById('routeStartTime').value,
-      endTime: document.getElementById('routeEndTime').value,
-      description: document.getElementById('routeDescription').value,
-      cost: parseFloat(document.getElementById('routeCost').value) || 0,
-      line: null
-    };
-
-    // Rysowanie linii na mapie
-    const latlngs = [startPoint.latlng, endPoint.latlng];
-    const polyline = L.polyline(latlngs, { color: 'green' }).addTo(map);
-    newRoute.line = polyline;
-
-    routes.push(newRoute);
-    recalculateAll();
-
-    // Reset
-    e.target.reset();
-    alert("Trasa dodana!");
-  });
-
-  // Aktualizuj selecty przy każdej zmianie punktów
-  document.addEventListener('DOMContentLoaded', updateRouteSelectors);
-</script>
-<!-- SEKCJA: Lista tras -->
-<section id="routes-section" class="container">
-  <h2>Trasy</h2>
-  <ul id="routeList" class="list"></ul>
-</section>
-
-<!-- MODAL: Potwierdzenie usunięcia trasy -->
-<div id="deleteRouteModal" class="modal" style="display:none;">
-  <div class="modal-content">
-    <p>Czy na pewno chcesz usunąć tę trasę?</p>
-    <button class="btn" onclick="confirmDeleteRoute()">Tak</button>
-    <button class="btn" onclick="closeDeleteRouteModal()">Anuluj</button>
-  </div>
-</div>
-
-<script>
-  let routeToDelete = null;
-
-  function renderRouteList() {
-    const list = document.getElementById('routeList');
-    list.innerHTML = '';
-
-    if (routes.length === 0) {
-      list.innerHTML = '<li>Brak tras</li>';
-      return;
-    }
-
-    routes.forEach(route => {
-      const start = getPointById(route.startId);
-      const end = getPointById(route.endId);
-
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <strong>${start?.name || '🗺'} → ${end?.name || '🗺'}</strong><br/>
-        <small>${route.startTime} → ${route.endTime}</small><br/>
-        <span>${route.description || 'Brak opisu'}</span><br/>
-        Koszt: ${route.cost} zł/€<br/>
-        <button class="btn" onclick="promptDeleteRoute(${route.id})">Usuń</button>
-        <button class="btn" onclick="editRoute(${route.id})" disabled>Edytuj</button>
-      `;
-      list.appendChild(li);
-    });
-  }
-
-  function promptDeleteRoute(routeId) {
-    routeToDelete = routeId;
-    document.getElementById('deleteRouteModal').style.display = 'flex';
-  }
-
-  function closeDeleteRouteModal() {
-    routeToDelete = null;
-    document.getElementById('deleteRouteModal').style.display = 'none';
-  }
-
-  function confirmDeleteRoute() {
-    const index = routes.findIndex(r => r.id === routeToDelete);
-    if (index !== -1) {
-      const route = routes[index];
-      if (route.line) map.removeLayer(route.line);
-      routes.splice(index, 1);
-    }
-    closeDeleteRouteModal();
-    renderRouteList();
-    calculateCosts();
-  }
-
-  function editRoute(id) {
-    // (opcjonalnie w 12/12) – można dodać formularz edycji tras jak w przypadku punktów
-    alert("Funkcja edycji trasy w przygotowaniu.");
-  }
-
-  function recalculateAll() {
-    renderPointsList();
-    updateRouteSelectors();
-    renderRouteList();
-    calculateCosts();
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    renderRouteList();
-  });
-</script>
-<!-- SEKCJA: Koszty łącznie -->
-<section id="total-costs-section" class="container">
-  <h2>Koszty łącznie</h2>
-  <p>Całkowite koszty podróży, podzielone na kategorie:</p>
-  <ul id="totalCostsList">
-    <li>Jedzenie: <span id="foodCosts">0 zł</span></li>
-    <li>Noclegi: <span id="accommodationCosts">0 zł</span></li>
-    <li>Atrakcje: <span id="attractionCosts">0 zł</span></li>
-    <li>Transport: <span id="transportCosts">0 zł</span></li>
-    <li>Dodatkowe: <span id="extraCosts">0 zł</span></li>
-  </ul>
-</section>
-
-<!-- SEKCJA: Koszty dodatkowe -->
-<section id="extra-costs-section" class="container">
-  <h2>Koszty dodatkowe</h2>
-  <form id="extraCostForm">
-    <label>Opis kosztu:
-      <input type="text" id="extraCostDescription" required />
-    </label>
-    <label>Koszt (zł/€):
-      <input type="number" id="extraCostAmount" required />
-    </label>
-    <button type="submit" class="btn">Dodaj koszt</button>
-  </form>
-
-  <ul id="extraCostsList"></ul>
-</section>
-
-<script>
-  const extraCosts = [];
-
-  // Obliczanie wszystkich kosztów
-  function calculateCosts() {
-    let food = 0, accommodation = 0, attractions = 0, transport = 0, extra = 0;
-
-    // Koszty z punktów
-    points.forEach(point => {
-      if (point.type === 'Jedzenie') food += point.cost;
-      if (point.type === 'Nocleg') accommodation += point.cost;
-      if (point.type === 'Atrakcja') attractions += point.cost;
-    });
-
-    // Koszty z tras
-    routes.forEach(route => {
-      transport += route.cost;
-    });
-
-    // Koszty dodatkowe
-    extraCosts.forEach(cost => {
-      extra += cost.amount;
-    });
-
-    // Aktualizowanie widoku
-    document.getElementById('foodCosts').textContent = `${food} zł`;
-    document.getElementById('accommodationCosts').textContent = `${accommodation} zł`;
-    document.getElementById('attractionCosts').textContent = `${attractions} zł`;
-    document.getElementById('transportCosts').textContent = `${transport} zł`;
-    document.getElementById('extraCosts').textContent = `${extra} zł`;
-  }
-
-  // Dodawanie kosztu dodatkowego
-  document.getElementById('extraCostForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    const description = document.getElementById('extraCostDescription').value.trim();
-    const amount = parseFloat(document.getElementById('extraCostAmount').value) || 0;
-
-    if (description && amount > 0) {
-      const newExtraCost = { description, amount };
-      extraCosts.push(newExtraCost);
-      renderExtraCosts();
-      calculateCosts();
-      document.getElementById('extraCostForm').reset();
-    }
-  });
-
-  // Renderowanie kosztów dodatkowych
-  function renderExtraCosts() {
-    const list = document.getElementById('extraCostsList');
-    list.innerHTML = '';
-
-    if (extraCosts.length === 0) {
-      list.innerHTML = '<li>Brak kosztów dodatkowych</li>';
-      return;
-    }
-
-    extraCosts.forEach((cost, index) => {
-      const li = document.createElement('li');
-      li.innerHTML = `${cost.description}: ${cost.amount} zł 
-        <button class="btn" onclick="removeExtraCost(${index})">Usuń</button>`;
-      list.appendChild(li);
-    });
-  }
-
-  // Usuwanie kosztu dodatkowego
-  function removeExtraCost(index) {
-    extraCosts.splice(index, 1);
-    renderExtraCosts();
-    calculateCosts();
-  }
-
-  // Inicjalizacja (po załadowaniu strony)
-  document.addEventListener('DOMContentLoaded', function () {
-    renderExtraCosts();
-    calculateCosts();
-  });
-</script>
+        // Inicjalne wyświetlenie danych
+        displayUserData();
+    </script>
+</body>
+</html>
