@@ -1,445 +1,1502 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Podróż Gosi i Mateusza</title>
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    /* Ogólne style */
-    #map { height: 400px; }
-    .section { margin-bottom: 40px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podróż Gosi i Mateusza</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Font Awesome dla ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap">
+    <style>
+        /* --- Główne style --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-button {
+            background-color: #e9ecef;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 15px 20px;
+            flex-grow: 1;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .tab-button:hover {
+            background-color: #dae0e5;
+        }
+        
+        .tab-button.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* --- Sekcja: Mapa świata --- */
+        #map-section {
+            margin-bottom: 30px;
+        }
+        
+        #map {
+            height: 500px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+        
+        /* --- Sekcja: Dodawanie i edycja punktów --- */
+        .form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        /* --- Sekcja: Lista punktów --- */
+        .points-list, .routes-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .point-item, .route-item {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .point-item-info, .route-item-info {
+            flex-grow: 1;
+        }
+        
+        .point-item-title, .route-item-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .point-type-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: white;
+            margin-left: 10px;
+        }
+        
+        .type-Atrakcja { background-color: #3498db; }
+        .type-Jedzenie { background-color: #e74c3c; }
+        .type-Nocleg { background-color: #2ecc71; }
+        .type-Inne { background-color: #95a5a6; }
+        .type-Transport { background-color: #f39c12; }
+        
+        .point-item-details, .route-item-details {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .point-actions, .route-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* --- Sekcja: Trasy --- */
+        .route-form-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        /* --- Sekcja: Koszty --- */
+        .cost-summary {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .cost-category {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .cost-category:last-child {
+            border-bottom: none;
+        }
+        
+        .cost-category-name {
+            font-weight: 500;
+        }
+        
+        .cost-total {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 18px;
+        }
+        
+        /* --- Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        .modal-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Responsywność */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+            
+            #map {
+                height: 350px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .point-item, .route-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .point-actions, .route-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .modal-content {
+                margin: 20% auto;
+                width: 95%;
+            }
+        }
+
+        /* Info box na mapie */
+        .info-box {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            max-width: 250px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-box-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .info-box-content {
+            font-size: 14px;
+        }
+        
+        .info-box-image {
+            width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-  <div class="container my-3">
-    <h1 class="text-center mb-4">Podróż Gosi i Mateusza</h1>
+    <header>
+        <div class="container">
+            <h1>Podróż Gosi i Mateusza</h1>
+            <p>Twoja aplikacja do planowania podróży</p>
+        </div>
+    </header>
 
-    <!-- ******************************************************************
-         Sekcja 1: Mapa świata
-         Tytuł: "Mapa"
-         Po kliknięciu użytkownik może dodać punkt za pomocą formularza z modalem.
-         Markery mają kolor zależny od typu.
-         ****************************************************************** -->
-    <section id="mapSection" class="section">
-      <h2>Mapa</h2>
-      <div id="map"></div>
-    </section>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="map-tab">Mapa</button>
+            <button class="tab-button" data-tab="points-tab">Punkty</button>
+            <button class="tab-button" data-tab="routes-tab">Trasy</button>
+            <button class="tab-button" data-tab="costs-tab">Koszty</button>
+        </div>
 
-    <!-- Modal: Formularz dodawania punktu (zarządzanie punktami) -->
-    <div class="modal fade" id="pointModal" tabindex="-1" aria-labelledby="pointModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="pointModalLabel">Dodaj punkt</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
-          </div>
-          <div class="modal-body">
-            <form id="pointForm">
-              <input type="hidden" id="pointLat">
-              <input type="hidden" id="pointLng">
-              <div class="mb-3">
-                <label for="pointName" class="form-label">Nazwa</label>
-                <input type="text" class="form-control" id="pointName" required>
-              </div>
-              <div class="mb-3">
-                <label for="pointType" class="form-label">Typ</label>
-                <select id="pointType" class="form-select">
-                  <option value="Atrakcja">Atrakcja</option>
-                  <option value="Jedzenie">Jedzenie</option>
-                  <option value="Nocleg">Nocleg</option>
-                  <option value="Inne">Inne</option>
+        <!-- Sekcja: Mapa świata -->
+        <div id="map-tab" class="tab-content active">
+            <h2>Mapa</h2>
+            <div id="map-section">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- Sekcja: Lista punktów -->
+        <div id="points-tab" class="tab-content">
+            <h2>Punkty</h2>
+            <div class="form-group">
+                <label for="filter-point-type">Filtruj według typu:</label>
+                <select id="filter-point-type" class="form-control">
+                    <option value="all">Wszystkie</option>
+                    <option value="Atrakcja">Atrakcja</option>
+                    <option value="Jedzenie">Jedzenie</option>
+                    <option value="Nocleg">Nocleg</option>
+                    <option value="Inne">Inne</option>
                 </select>
-              </div>
-              <div class="mb-3">
-                <label for="pointAddress" class="form-label">Adres</label>
-                <input type="text" class="form-control" id="pointAddress">
-              </div>
-              <div class="mb-3">
-                <label for="pointCost" class="form-label">Koszt (zł/euro)</label>
-                <input type="number" class="form-control" id="pointCost" step="0.01">
-              </div>
-              <div class="mb-3">
-                <label for="pointImage" class="form-label">URL obrazka</label>
-                <input type="text" class="form-control" id="pointImage">
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
-            <button type="button" class="btn btn-primary" id="savePointBtn">Zapisz</button>
-          </div>
+            </div>
+            <ul id="points-list" class="points-list">
+                <!-- Lista punktów będzie generowana dynamicznie -->
+            </ul>
         </div>
-      </div>
+
+        <!-- Sekcja: Lista tras -->
+        <div id="routes-tab" class="tab-content">
+            <h2>Trasy</h2>
+            <div class="form-container">
+                <h3>Dodaj nową trasę</h3>
+                <form id="add-route-form">
+                    <div class="form-group">
+                        <label for="route-start">Punkt początkowy:</label>
+                        <select id="route-start" class="form-control" required>
+                            <option value="">Wybierz punkt początkowy</option>
+                            <!-- Opcje będą generowane dynamicznie -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="route-end">Punkt końcowy:</label>
+                        <select id="route-end" class="form-control" required>
+                            <option value="">Wybierz punkt końcowy</option>
+                            <!-- Opcje będą generowane dynamicznie -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="route-departure">Data i godzina odjazdu:</label>
+                        <input type="datetime-local" id="route-departure" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="route-arrival">Data i godzina przyjazdu:</label>
+                        <input type="datetime-local" id="route-arrival" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="route-description">Opis:</label>
+                        <textarea id="route-description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="route-cost">Koszt:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="route-cost" class="form-control" min="0" step="0.01" required>
+                            <select id="route-currency" class="form-control" style="width: 80px;">
+                                <option value="PLN">PLN</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Dodaj trasę</button>
+                </form>
+            </div>
+            <ul id="routes-list" class="routes-list">
+                <!-- Lista tras będzie generowana dynamicznie -->
+            </ul>
+        </div>
+
+        <!-- Sekcja: Koszty -->
+        <div id="costs-tab" class="tab-content">
+            <h2>Koszty</h2>
+            
+            <!-- Sekcja: Koszty łącznie -->
+            <div class="cost-summary">
+                <h3>Koszty łącznie</h3>
+                <div class="cost-category">
+                    <span class="cost-category-name">Jedzenie:</span>
+                    <span id="food-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+                <div class="cost-category">
+                    <span class="cost-category-name">Noclegi:</span>
+                    <span id="accommodation-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+                <div class="cost-category">
+                    <span class="cost-category-name">Atrakcje:</span>
+                    <span id="attraction-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+                <div class="cost-category">
+                    <span class="cost-category-name">Transport:</span>
+                    <span id="transport-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+                <div class="cost-category">
+                    <span class="cost-category-name">Dodatkowe:</span>
+                    <span id="additional-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+                <div class="cost-total">
+                    <span>RAZEM:</span>
+                    <span id="total-cost">0.00 PLN / 0.00 EUR</span>
+                </div>
+            </div>
+            
+            <!-- Sekcja: Koszty dodatkowe -->
+            <div class="form-container">
+                <h3>Koszty dodatkowe</h3>
+                <form id="add-additional-cost-form">
+                    <div class="form-group">
+                        <label for="additional-cost-description">Opis kosztu:</label>
+                        <input type="text" id="additional-cost-description" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="additional-cost-amount">Koszt:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="additional-cost-amount" class="form-control" min="0" step="0.01" required>
+                            <select id="additional-cost-currency" class="form-control" style="width: 80px;">
+                                <option value="PLN">PLN</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Dodaj koszt</button>
+                </form>
+            </div>
+            
+            <h3>Lista kosztów dodatkowych</h3>
+            <ul id="additional-costs-list" class="points-list">
+                <!-- Lista kosztów dodatkowych będzie generowana dynamicznie -->
+            </ul>
+        </div>
     </div>
 
-    <!-- ******************************************************************
-         Sekcja 2: Lista punktów
-         Tytuł: "Punkty"
-         Lista zawiera wszystkie dodane punkty wraz z informacjami oraz
-         przyciski Edytuj i Usuń (edycja – uproszczona przez prompt).
-         ****************************************************************** -->
-    <section id="pointsSection" class="section">
-      <h2>Punkty</h2>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nazwa</th>
-            <th>Typ</th>
-            <th>Adres</th>
-            <th>Koszt</th>
-            <th>Obrazek</th>
-            <th>Akcje</th>
-          </tr>
-        </thead>
-        <tbody id="pointsListBody"></tbody>
-      </table>
-    </section>
-
-    <!-- ******************************************************************
-         Sekcja 3: Dodaj trasę
-         Przycisk wywołuje formularz (modal) do tworzenia trasy
-         między punktami zapisanymi w sekcji "Punkty".
-         ****************************************************************** -->
-    <section id="addRouteSection" class="section">
-      <h2>Dodaj trasę</h2>
-      <button class="btn btn-primary" id="addRouteBtn">Dodaj trasę</button>
-    </section>
-
-    <!-- Modal: Formularz tworzenia trasy -->
-    <div class="modal fade" id="routeModal" tabindex="-1" aria-labelledby="routeModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
+    <!-- Modal do dodawania punktów -->
+    <div id="add-point-modal" class="modal">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="routeModalLabel">Dodaj trasę</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
-          </div>
-          <div class="modal-body">
-            <form id="routeForm">
-              <div class="mb-3">
-                <label for="routeStart" class="form-label">Punkt początkowy (ID)</label>
-                <input type="number" class="form-control" id="routeStart" required>
-              </div>
-              <div class="mb-3">
-                <label for="routeEnd" class="form-label">Punkt końcowy (ID)</label>
-                <input type="number" class="form-control" id="routeEnd" required>
-              </div>
-              <div class="mb-3">
-                <label for="routeDeparture" class="form-label">Data i godzina odjazdu</label>
-                <input type="datetime-local" class="form-control" id="routeDeparture" required>
-              </div>
-              <div class="mb-3">
-                <label for="routeArrival" class="form-label">Data i godzina przyjazdu</label>
-                <input type="datetime-local" class="form-control" id="routeArrival" required>
-              </div>
-              <div class="mb-3">
-                <label for="routeDescription" class="form-label">Opis</label>
-                <textarea class="form-control" id="routeDescription"></textarea>
-              </div>
-              <div class="mb-3">
-                <label for="routeCost" class="form-label">Koszt (zł/euro)</label>
-                <input type="number" class="form-control" id="routeCost" step="0.01">
-              </div>
+            <div class="modal-header">
+                <h3 class="modal-title">Dodaj nowy punkt</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="add-point-form">
+                <input type="hidden" id="point-lat">
+                <input type="hidden" id="point-lng">
+                <div class="form-group">
+                    <label for="point-name">Nazwa:</label>
+                    <input type="text" id="point-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="point-type">Typ:</label>
+                    <select id="point-type" class="form-control" required>
+                        <option value="Atrakcja">Atrakcja</option>
+                        <option value="Jedzenie">Jedzenie</option>
+                        <option value="Nocleg">Nocleg</option>
+                        <option value="Inne">Inne</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="point-address">Adres:</label>
+                    <input type="text" id="point-address" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="point-description">Opis:</label>
+                    <textarea id="point-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="point-cost">Koszt:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="point-cost" class="form-control" min="0" step="0.01">
+                        <select id="point-currency" class="form-control" style="width: 80px;">
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="point-image-url">URL obrazka:</label>
+                    <input type="url" id="point-image-url" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancel-add-point">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Dodaj</button>
+                </div>
             </form>
-            <small class="text-muted">Uwaga: ID punktu możesz znaleźć w sekcji "Punkty".</small>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
-            <button type="button" class="btn btn-primary" id="saveRouteBtn">Zapisz trasę</button>
-          </div>
         </div>
-      </div>
     </div>
 
-    <!-- ******************************************************************
-         Sekcja 4: Lista tras
-         Tytuł: "Trasy"
-         Lista wyświetla wszystkie utworzone trasy wraz z dodatkowymi informacjami
-         i możliwością usunięcia (z komunikatem potwierdzającym).
-         ****************************************************************** -->
-    <section id="routesSection" class="section">
-      <h2>Trasy</h2>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Punkt początkowy</th>
-            <th>Punkt końcowy</th>
-            <th>Odjazd</th>
-            <th>Przyjazd</th>
-            <th>Opis</th>
-            <th>Koszt</th>
-            <th>Akcje</th>
-          </tr>
-        </thead>
-        <tbody id="routesListBody"></tbody>
-      </table>
-    </section>
-
-    <!-- ******************************************************************
-         Sekcja 5: Koszty łącznie
-         Tytuł: "Koszty łącznie"
-         Automatycznie zliczane (wprowadzone koszty z podziałem na:
-         Jedzenie, Noclegi, Atrakcje, Transport, Dodatkowe).
-         ****************************************************************** -->
-    <section id="totalCostsSection" class="section">
-      <h2>Koszty łącznie</h2>
-      <table class="table">
-        <tbody>
-          <tr><td>Jedzenie:</td><td id="foodCost">0</td></tr>
-          <tr><td>Noclegi:</td><td id="lodgingCost">0</td></tr>
-          <tr><td>Atrakcje:</td><td id="attractionCost">0</td></tr>
-          <tr><td>Transport:</td><td id="transportCost">0</td></tr>
-          <tr><td>Dodatkowe:</td><td id="additionalCostTotal">0</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <!-- ******************************************************************
-         Sekcja 6: Koszty dodatkowe
-         Tytuł: "Koszty dodatkowe"
-         Umożliwia dodanie własnych kosztów (opis + wartość) – z możliwością edycji/usunięcia.
-         ****************************************************************** -->
-    <section id="additionalCostsSection" class="section">
-      <h2>Koszty dodatkowe</h2>
-      <form id="additionalCostForm" class="mb-3">
-        <div class="mb-3">
-          <label for="additionalCostDesc" class="form-label">Opis kosztu</label>
-          <input type="text" class="form-control" id="additionalCostDesc" required>
+    <!-- Modal do edycji punktów -->
+    <div id="edit-point-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edytuj punkt</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="edit-point-form">
+                <input type="hidden" id="edit-point-id">
+                <input type="hidden" id="edit-point-lat">
+                <input type="hidden" id="edit-point-lng">
+                <div class="form-group">
+                    <label for="edit-point-name">Nazwa:</label>
+                    <input type="text" id="edit-point-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-point-type">Typ:</label>
+                    <select id="edit-point-type" class="form-control" required>
+                        <option value="Atrakcja">Atrakcja</option>
+                        <option value="Jedzenie">Jedzenie</option>
+                        <option value="Nocleg">Nocleg</option>
+                        <option value="Inne">Inne</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-point-address">Adres:</label>
+                    <input type="text" id="edit-point-address" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="edit-point-description">Opis:</label>
+                    <textarea id="edit-point-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-point-cost">Koszt:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="edit-point-cost" class="form-control" min="0" step="0.01">
+                        <select id="edit-point-currency" class="form-control" style="width: 80px;">
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-point-image-url">URL obrazka:</label>
+                    <input type="url" id="edit-point-image-url" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancel-edit-point">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz zmiany</button>
+                </div>
+            </form>
         </div>
-        <div class="mb-3">
-          <label for="additionalCostValue" class="form-label">Koszt (zł/euro)</label>
-          <input type="number" class="form-control" id="additionalCostValue" step="0.01" required>
+    </div>
+
+    <!-- Modal do edycji trasy -->
+    <div id="edit-route-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edytuj trasę</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="edit-route-form">
+                <input type="hidden" id="edit-route-id">
+                <div class="form-group">
+                    <label for="edit-route-start">Punkt początkowy:</label>
+                    <select id="edit-route-start" class="form-control" required>
+                        <option value="">Wybierz punkt początkowy</option>
+                        <!-- Opcje będą generowane dynamicznie -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-route-end">Punkt końcowy:</label>
+                    <select id="edit-route-end" class="form-control" required>
+                        <option value="">Wybierz punkt końcowy</option>
+                        <!-- Opcje będą generowane dynamicznie -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-route-departure">Data i godzina odjazdu:</label>
+                    <input type="datetime-local" id="edit-route-departure" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-route-arrival">Data i godzina przyjazdu:</label>
+                    <input type="datetime-local" id="edit-route-arrival" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-route-description">Opis:</label>
+                    <textarea id="edit-route-description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-route-cost">Koszt:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="edit-route-cost" class="form-control" min="0" step="0.01" required>
+                        <select id="edit-route-currency" class="form-control" style="width: 80px;">
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancel-edit-route">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz zmiany</button>
+                </div>
+            </form>
         </div>
-        <button type="submit" class="btn btn-primary">Dodaj koszt</button>
-      </form>
-      <ul id="additionalCostsList" class="list-group"></ul>
-    </section>
+    </div>
 
-  </div>
+    <!-- Modal do edycji kosztów dodatkowych -->
+    <div id="edit-additional-cost-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edytuj koszt dodatkowy</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="edit-additional-cost-form">
+                <input type="hidden" id="edit-additional-cost-id">
+                <div class="form-group">
+                    <label for="edit-additional-cost-description">Opis kosztu:</label>
+                    <input type="text" id="edit-additional-cost-description" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-additional-cost-amount">Koszt:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="edit-additional-cost-amount" class="form-control" min="0" step="0.01" required>
+                        <select id="edit-additional-cost-currency" class="form-control" style="width: 80px;">
+                            <option value="PLN">PLN</option>
+                            <option value="EUR">EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="cancel-edit-additional-cost">Anuluj</button>
+                    <button type="submit" class="btn btn-success">Zapisz zmiany</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-  <!-- Skrypty: Bootstrap JS i Leaflet -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    // GLOBALNE DANE
-    let points = [];
-    let routes = [];
-    let additionalCosts = [];
+    <!-- Modal do potwierdzenia usunięcia -->
+    <div id="confirm-delete-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Potwierdź usunięcie</h3>
+                <span class="close">&times;</span>
+            </div>
+            <p id="confirm-delete-text">Czy na pewno chcesz usunąć ten element?</p>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="cancel-delete">Anuluj</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Tak, usuń</button>
+            </div>
+        </div>
+    </div>
 
-    // Budżet – kategorie
-    let budget = {
-      "Jedzenie": 0,
-      "Noclegi": 0,
-      "Atrakcje": 0,
-      "Transport": 0,
-      "Dodatkowe": 0
-    };
-
-    // Mapowanie kolorów dla markerów (wg typu)
-    const typeColors = {
-      "Atrakcja": "blue",
-      "Jedzenie": "green",
-      "Nocleg": "red",
-      "Inne": "purple"
-    };
-
-    // INICJALIZACJA MAPY (Leaflet)
-    const map = L.map('map').setView([51.9194, 19.1451], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    let markersLayer = L.layerGroup().addTo(map);
-    let routesLayer = L.layerGroup().addTo(map);
-
-    // FUNKCJA: Aktualizacja widoku budżetu
-    function updateBudget(category, amount) {
-      if (!budget[category]) budget[category] = 0;
-      budget[category] += amount;
-      document.getElementById("foodCost").innerText = budget["Jedzenie"].toFixed(2);
-      document.getElementById("lodgingCost").innerText = budget["Noclegi"].toFixed(2);
-      document.getElementById("attractionCost").innerText = budget["Atrakcje"].toFixed(2);
-      document.getElementById("transportCost").innerText = budget["Transport"].toFixed(2);
-      document.getElementById("additionalCostTotal").innerText = budget["Dodatkowe"].toFixed(2);
-    }
-
-    // FUNKCJA: Dodanie punktu (marker) + aktualizacja listy i budżetu
-    function addPoint(lat, lng, data) {
-      let costNum = parseFloat(data.cost) || 0;
-      let color = typeColors[data.type] || "black";
-      let marker = L.circleMarker([lat, lng], { color: color, radius: 8, fillOpacity: 0.8 }).addTo(markersLayer);
-      marker.bindPopup("<strong>" + data.name + "</strong><br>" + data.address);
-      data.marker = marker;
-      data.lat = lat;
-      data.lng = lng;
-      data.id = Date.now(); // unikalne ID
-      points.push(data);
-      updatePointsList();
-      // Aktualizacja budżetu zależnie od typu punktu
-      if(data.type === "Jedzenie") updateBudget("Jedzenie", costNum);
-      else if(data.type === "Nocleg") updateBudget("Noclegi", costNum);
-      else if(data.type === "Atrakcja") updateBudget("Atrakcje", costNum);
-      else if(data.type === "Inne") updateBudget("Dodatkowe", costNum);
-    }
-
-    // FUNKCJA: Aktualizacja listy punktów w tabeli
-    function updatePointsList() {
-      const tbody = document.getElementById("pointsListBody");
-      tbody.innerHTML = "";
-      points.forEach(point => {
-        let tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${point.id}</td>
-          <td>${point.name}</td>
-          <td>${point.type}</td>
-          <td>${point.address}</td>
-          <td>${point.cost}</td>
-          <td>${point.imageUrl ? '<img src="'+point.imageUrl+'" alt="obrazek" width="50">' : ''}</td>
-          <td>
-            <button class="btn btn-sm btn-warning" onclick="editPoint(${point.id})">Edytuj</button>
-            <button class="btn btn-sm btn-danger" onclick="deletePoint(${point.id})">Usuń</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // FUNKCJA: Usuwanie punktu (z potwierdzeniem)
-    function deletePoint(id) {
-      if(confirm("Czy na pewno chcesz usunąć?")) {
-        const index = points.findIndex(p => p.id === id);
-        if(index > -1) {
-          markersLayer.removeLayer(points[index].marker);
-          points.splice(index, 1);
-          updatePointsList();
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs
+      .cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <script>
+        // --- Inicjalizacja aplikacji ---
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicjalizacja danych
+            initializeData();
+            
+            // Inicjalizacja mapy
+            initializeMap();
+            
+            // Inicjalizacja zakładek
+            initializeTabs();
+            
+            // Inicjalizacja formularzy
+            initializeForms();
+            
+            // Inicjalizacja zdarzeń dla modali
+            initializeModals();
+            
+            // Renderowanie danych
+            renderPoints();
+            renderRoutes();
+            renderAdditionalCosts();
+            updateCostSummary();
+            updateRoutesSelects();
+        });
+        
+        // --- Zmienne globalne ---
+        let map;
+        let pointsLayer = [];
+        let routesLayer = [];
+        let points = [];
+        let routes = [];
+        let additionalCosts = [];
+        let deleteItemId = null;
+        let deleteItemType = null;
+        
+        // Kolory markerów według typów punktów
+        const typeColors = {
+            'Atrakcja': '#3498db',
+            'Jedzenie': '#e74c3c',
+            'Nocleg': '#2ecc71',
+            'Inne': '#95a5a6'
+        };
+        
+        // --- Inicjalizacja danych ---
+        function initializeData() {
+            // Ładowanie danych z lokalnego magazynu
+            const savedPoints = localStorage.getItem('travelPoints');
+            if (savedPoints) {
+                points = JSON.parse(savedPoints);
+            }
+            
+            const savedRoutes = localStorage.getItem('travelRoutes');
+            if (savedRoutes) {
+                routes = JSON.parse(savedRoutes);
+            }
+            
+            const savedAdditionalCosts = localStorage.getItem('travelAdditionalCosts');
+            if (savedAdditionalCosts) {
+                additionalCosts = JSON.parse(savedAdditionalCosts);
+            }
         }
-      }
-    }
-
-    // FUNKCJA: Edycja punktu (tutaj uproszczona – tylko zmiana nazwy poprzez prompt)
-    function editPoint(id) {
-      const point = points.find(p => p.id === id);
-      if(point) {
-        let newName = prompt("Podaj nową nazwę", point.name);
-        if(newName !== null) {
-          point.name = newName;
-          updatePointsList();
-          point.marker.bindPopup("<strong>" + point.name + "</strong><br>" + point.address);
+        
+        // --- Funkcje zapisywania danych ---
+        function savePoints() {
+            localStorage.setItem('travelPoints', JSON.stringify(points));
         }
-      }
-    }
-
-    // Obsługa zdarzenia kliknięcia w mapę – otwiera modal formularza dodania punktu
-    map.on('click', function(e) {
-      openPointModal(e.latlng);
-    });
-
-    // FUNKCJA: Otwarcie formularza dodawania punktu (modal)
-    function openPointModal(latlng) {
-      document.getElementById('pointLat').value = latlng.lat;
-      document.getElementById('pointLng').value = latlng.lng;
-      document.getElementById('pointName').value = "";
-      document.getElementById('pointAddress').value = "";
-      document.getElementById('pointCost').value = "";
-      document.getElementById('pointImage').value = "";
-      let pointModal = new bootstrap.Modal(document.getElementById('pointModal'));
-      pointModal.show();
-    }
-
-    // Zapisanie punktu (formularz modal)
-    document.getElementById('savePointBtn').addEventListener('click', function() {
-      let lat = parseFloat(document.getElementById('pointLat').value);
-      let lng = parseFloat(document.getElementById('pointLng').value);
-      let name = document.getElementById('pointName').value;
-      let type = document.getElementById('pointType').value;
-      let address = document.getElementById('pointAddress').value;
-      let cost = document.getElementById('pointCost').value;
-      let imageUrl = document.getElementById('pointImage').value;
-      if(name.trim() === "") return;
-      let data = { name, type, address, cost, imageUrl };
-      addPoint(lat, lng, data);
-      let modalEl = document.getElementById('pointModal');
-      let modal = bootstrap.Modal.getInstance(modalEl);
-      modal.hide();
-    });
-
-    // ******************************************************************
-    // Sekcja 3 – Dodawanie trasy: Obsługa przycisku do otwarcia modala
-    document.getElementById("addRouteBtn").addEventListener("click", function(){
-      if(points.length < 2) {
-        alert("Musisz dodać przynajmniej 2 punkty, aby stworzyć trasę.");
-        return;
-      }
-      let routeModal = new bootstrap.Modal(document.getElementById('routeModal'));
-      routeModal.show();
-    });
-
-    // Zapisanie trasy z formularza modal
-    document.getElementById("saveRouteBtn").addEventListener("click", function(){
-      let startId = document.getElementById('routeStart').value;
-      let endId = document.getElementById('routeEnd').value;
-      let departure = document.getElementById('routeDeparture').value;
-      let arrival = document.getElementById('routeArrival').value;
-      let description = document.getElementById('routeDescription').value;
-      let cost = document.getElementById('routeCost').value;
-      let startPoint = points.find(p => p.id == startId);
-      let endPoint = points.find(p => p.id == endId);
-      if(!startPoint || !endPoint) {
-        alert("Wybrano nieprawidłowy punkt startowy lub końcowy.");
-        return;
-      }
-      let route = {
-        id: Date.now(),
-        start: startPoint,
-        end: endPoint,
-        departure: departure,
-        arrival: arrival,
-        description: description,
-        cost: cost
-      };
-      routes.push(route);
-      addRouteToMap(route);
-      updateRoutesList();
-      updateBudget("Transport", parseFloat(cost) || 0);
-      let modalEl = document.getElementById('routeModal');
-      let modal = bootstrap.Modal.getInstance(modalEl);
-      modal.hide();
-    });
-
-    // FUNKCJA: Dodanie linii (trasy) na mapie
-    function addRouteToMap(route) {
-      let latlngs = [
-        [route.start.lat, route.start.lng],
-        [route.end.lat, route.end.lng]
-      ];
-      let polyline = L.polyline(latlngs, { color: "orange" }).addTo(routesLayer);
-      route.polyline = polyline;
-    }
-
-    // FUNKCJA: Aktualizacja listy tras
-    function updateRoutesList() {
-      const tbody = document.getElementById("routesListBody");
-      tbody.innerHTML = "";
-      routes.forEach(route => {
-        let tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${route.id}</td>
-          <td>${route.start.name}</td>
-          <td>${route.end.name}</td>
-          <td>${route.departure}</td>
-          <td>${route.arrival}</td>
-          <td>${route.description}</td>
-          <td>${route.cost}</td>
-          <td>
-            <button class="btn btn-sm btn-danger" onclick="deleteRoute(${route.id})">Usuń</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // FUNKCJA: Usuwanie
+        
+        function saveRoutes() {
+            localStorage.setItem('travelRoutes', JSON.stringify(routes));
+        }
+        
+        function saveAdditionalCosts() {
+            localStorage.setItem('travelAdditionalCosts', JSON.stringify(additionalCosts));
+        }
+        
+        // --- Inicjalizacja mapy ---
+        function initializeMap() {
+            // Tworzenie mapy z centrum w Polsce
+            map = L.map('map').setView([52.0689, 19.4803], 6);
+            
+            // Dodawanie warstwy OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Obsługa kliknięcia na mapę
+            map.on('click', function(e) {
+                document.getElementById('point-lat').value = e.latlng.lat;
+                document.getElementById('point-lng').value = e.latlng.lng;
+                
+                // Otwieranie modalu dodawania punktu
+                document.getElementById('add-point-modal').style.display = 'block';
+            });
+            
+            // Dodawanie istniejących punktów i tras
+            renderPointsOnMap();
+            renderRoutesOnMap();
+        }
+        
+        // --- Inicjalizacja zakładek ---
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Usuwanie klasy "active" ze wszystkich przycisków i zawartości zakładek
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Dodawanie klasy "active" do wybranego przycisku i zawartości
+                    this.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Odświeżenie mapy jeśli przełączono na zakładkę mapy
+                    if (tabId === 'map-tab') {
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 0);
+                    }
+                });
+            });
+        }
+        
+        // --- Inicjalizacja formularzy ---
+        function initializeForms() {
+            // Formularz dodawania punktu
+            document.getElementById('add-point-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const newPoint = {
+                    id: Date.now().toString(),
+                    name: document.getElementById('point-name').value,
+                    type: document.getElementById('point-type').value,
+                    lat: parseFloat(document.getElementById('point-lat').value),
+                    lng: parseFloat(document.getElementById('point-lng').value),
+                    address: document.getElementById('point-address').value,
+                    description: document.getElementById('point-description').value,
+                    cost: document.getElementById('point-cost').value ? parseFloat(document.getElementById('point-cost').value) : 0,
+                    currency: document.getElementById('point-currency').value,
+                    imageUrl: document.getElementById('point-image-url').value
+                };
+                
+                points.push(newPoint);
+                savePoints();
+                
+                renderPoints();
+                renderPointsOnMap();
+                updateRoutesSelects();
+                updateCostSummary();
+                
+                document.getElementById('add-point-modal').style.display = 'none';
+                document.getElementById('add-point-form').reset();
+            });
+            
+            // Formularz edycji punktu
+            document.getElementById('edit-point-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const pointId = document.getElementById('edit-point-id').value;
+                const pointIndex = points.findIndex(p => p.id === pointId);
+                
+                if (pointIndex !== -1) {
+                    points[pointIndex] = {
+                        id: pointId,
+                        name: document.getElementById('edit-point-name').value,
+                        type: document.getElementById('edit-point-type').value,
+                        lat: parseFloat(document.getElementById('edit-point-lat').value),
+                        lng: parseFloat(document.getElementById('edit-point-lng').value),
+                        address: document.getElementById('edit-point-address').value,
+                        description: document.getElementById('edit-point-description').value,
+                        cost: document.getElementById('edit-point-cost').value ? parseFloat(document.getElementById('edit-point-cost').value) : 0,
+                        currency: document.getElementById('edit-point-currency').value,
+                        imageUrl: document.getElementById('edit-point-image-url').value
+                    };
+                    
+                    savePoints();
+                    
+                    renderPoints();
+                    renderPointsOnMap();
+                    renderRoutes();
+                    renderRoutesOnMap();
+                    updateCostSummary();
+                }
+                
+                document.getElementById('edit-point-modal').style.display = 'none';
+            });
+            
+            // Formularz dodawania trasy
+            document.getElementById('add-route-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const startId = document.getElementById('route-start').value;
+                const endId = document.getElementById('route-end').value;
+                
+                const startPoint = points.find(p => p.id === startId);
+                const endPoint = points.find(p => p.id === endId);
+                
+                if (startPoint && endPoint) {
+                    const newRoute = {
+                        id: Date.now().toString(),
+                        startId: startId,
+                        endId: endId,
+                        startName: startPoint.name,
+                        endName: endPoint.name,
+                        departure: document.getElementById('route-departure').value,
+                        arrival: document.getElementById('route-arrival').value,
+                        description: document.getElementById('route-description').value,
+                        cost: document.getElementById('route-cost').value ? parseFloat(document.getElementById('route-cost').value) : 0,
+                        currency: document.getElementById('route-currency').value
+                    };
+                    
+                    routes.push(newRoute);
+                    saveRoutes();
+                    
+                    renderRoutes();
+                    renderRoutesOnMap();
+                    updateCostSummary();
+                    
+                    document.getElementById('add-route-form').reset();
+                }
+            });
+            
+            // Formularz edycji trasy
+            document.getElementById('edit-route-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const routeId = document.getElementById('edit-route-id').value;
+                const routeIndex = routes.findIndex(r => r.id === routeId);
+                
+                if (routeIndex !== -1) {
+                    const startId = document.getElementById('edit-route-start').value;
+                    const endId = document.getElementById('edit-route-end').value;
+                    
+                    const startPoint = points.find(p => p.id === startId);
+                    const endPoint = points.find(p => p.id === endId);
+                    
+                    if (startPoint && endPoint) {
+                        routes[routeIndex] = {
+                            id: routeId,
+                            startId: startId,
+                            endId: endId,
+                            startName: startPoint.name,
+                            endName: endPoint.name,
+                            departure: document.getElementById('edit-route-departure').value,
+                            arrival: document.getElementById('edit-route-arrival').value,
+                            description: document.getElementById('edit-route-description').value,
+                            cost: document.getElementById('edit-route-cost').value ? parseFloat(document.getElementById('edit-route-cost').value) : 0,
+                            currency: document.getElementById('edit-route-currency').value
+                        };
+                        
+                        saveRoutes();
+                        
+                        renderRoutes();
+                        renderRoutesOnMap();
+                        updateCostSummary();
+                    }
+                }
+                
+                document.getElementById('edit-route-modal').style.display = 'none';
+            });
+            
+            // Formularz dodawania kosztów dodatkowych
+            document.getElementById('add-additional-cost-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const newCost = {
+                    id: Date.now().toString(),
+                    description: document.getElementById('additional-cost-description').value,
+                    amount: document.getElementById('additional-cost-amount').value ? parseFloat(document.getElementById('additional-cost-amount').value) : 0,
+                    currency: document.getElementById('additional-cost-currency').value
+                };
+                
+                additionalCosts.push(newCost);
+                saveAdditionalCosts();
+                
+                renderAdditionalCosts();
+                updateCostSummary();
+                
+                document.getElementById('add-additional-cost-form').reset();
+            });
+            
+            // Formularz edycji kosztów dodatkowych
+            document.getElementById('edit-additional-cost-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const costId = document.getElementById('edit-additional-cost-id').value;
+                const costIndex = additionalCosts.findIndex(c => c.id === costId);
+                
+                if (costIndex !== -1) {
+                    additionalCosts[costIndex] = {
+                        id: costId,
+                        description: document.getElementById('edit-additional-cost-description').value,
+                        amount: document.getElementById('edit-additional-cost-amount').value ? parseFloat(document.getElementById('edit-additional-cost-amount').value) : 0,
+                        currency: document.getElementById('edit-additional-cost-currency').value
+                    };
+                    
+                    saveAdditionalCosts();
+                    
+                    renderAdditionalCosts();
+                    updateCostSummary();
+                }
+                
+                document.getElementById('edit-additional-cost-modal').style.display = 'none';
+            });
+            
+            // Filtrowanie punktów
+            document.getElementById('filter-point-type').addEventListener('change', function(e) {
+                renderPoints();
+            });
+            
+            // Obsługa przycisków anulowania w formularzach
+            document.getElementById('cancel-add-point').addEventListener('click', function() {
+                document.getElementById('add-point-modal').style.display = 'none';
+                document.getElementById('add-point-form').reset();
+            });
+            
+            document.getElementById('cancel-edit-point').addEventListener('click', function() {
+                document.getElementById('edit-point-modal').style.display = 'none';
+            });
+            
+            document.getElementById('cancel-edit-route').addEventListener('click', function() {
+                document.getElementById('edit-route-modal').style.display = 'none';
+            });
+            
+            document.getElementById('cancel-edit-additional-cost').addEventListener('click', function() {
+                document.getElementById('edit-additional-cost-modal').style.display = 'none';
+            });
+            
+            document.getElementById('cancel-delete').addEventListener('click', function() {
+                document.getElementById('confirm-delete-modal').style.display = 'none';
+                deleteItemId = null;
+                deleteItemType = null;
+            });
+            
+            // Obsługa przycisku potwierdzenia usunięcia
+            document.getElementById('confirm-delete').addEventListener('click', function() {
+                if (deleteItemId && deleteItemType) {
+                    if (deleteItemType === 'point') {
+                        // Usuwanie punktu
+                        const pointIndex = points.findIndex(p => p.id === deleteItemId);
+                        if (pointIndex !== -1) {
+                            // Sprawdzenie, czy punkt jest używany w trasach
+                            const relatedRoutes = routes.filter(r => r.startId === deleteItemId || r.endId === deleteItemId);
+                            if (relatedRoutes.length > 0) {
+                                // Usuwanie tras związanych z punktem
+                                relatedRoutes.forEach(route => {
+                                    const routeIndex = routes.findIndex(r => r.id === route.id);
+                                    if (routeIndex !== -1) {
+                                        routes.splice(routeIndex, 1);
+                                    }
+                                });
+                                saveRoutes();
+                                renderRoutes();
+                                renderRoutesOnMap();
+                            }
+                            
+                            points.splice(pointIndex, 1);
+                            savePoints();
+                            renderPoints();
+                            renderPointsOnMap();
+                            updateRoutesSelects();
+                        }
+                    } else if (deleteItemType === 'route') {
+                        // Usuwanie trasy
+                        const routeIndex = routes.findIndex(r => r.id === deleteItemId);
+                        if (routeIndex !== -1) {
+                            routes.splice(routeIndex, 1);
+                            saveRoutes();
+                            renderRoutes();
+                            renderRoutesOnMap();
+                        }
+                    } else if (deleteItemType === 'additionalCost') {
+                        // Usuwanie kosztu dodatkowego
+                        const costIndex = additionalCosts.findIndex(c => c.id === deleteItemId);
+                        if (costIndex !== -1) {
+                            additionalCosts.splice(costIndex, 1);
+                            saveAdditionalCosts();
+                            renderAdditionalCosts();
+                        }
+                    }
+                    
+                    updateCostSummary();
+                }
+                
+                document.getElementById('confirm-delete-modal').style.display = 'none';
+                deleteItemId = null;
+                deleteItemType = null;
+            });
+        }
+        
+        // --- Inicjalizacja modali ---
+        function initializeModals() {
+            // Zamykanie modali po kliknięciu na X
+            const closeButtons = document.querySelectorAll('.close');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    modal.style.display = 'none';
+                });
+            });
+            
+            // Zamykanie modali po kliknięciu poza nimi
+            window.addEventListener('click', function(e) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // --- Funkcje renderowania danych ---
+        function renderPoints() {
+            const pointsList = document.getElementById('points-list');
+            const filterType = document.getElementById('filter-point-type').value;
+            
+            pointsList.innerHTML = '';
+            
+            // Filtrowanie punktów
+            let filteredPoints = points;
+            if (filterType !== 'all') {
+                filteredPoints = points.filter(point => point.type === filterType);
+            }
+            
+            if (filteredPoints.length === 0) {
+                pointsList.innerHTML = '<p>Brak dodanych punktów.</p>';
+                return;
+            }
+            
+            filteredPoints.forEach(point => {
+                const pointItem = document.createElement('li');
+                pointItem.className = 'point-item';
+                
+                const costDisplay = point.cost > 0 ? `${point.cost} ${point.currency}` : 'Brak';
+                const addressDisplay = point.address ? point.address : 'Brak adresu';
+                
+                pointItem.innerHTML = `
+                    <div class="point-item-info">
+                        <div class="point-item-title">
+                            ${point.name}
+                            <span class="point-type-badge type-${point.type}">${point.type}</span>
+                        </div>
+                        <div class="point-item-details">
+                            <div><i class="fas fa-map-marker-alt"></i> ${addressDisplay}</div>
+                            <div><i class="fas fa-coins"></i> Koszt: ${costDisplay}</div>
+                            ${point.description ? `<div><i class="fas fa-info-circle"></i> ${point.description}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="point-actions">
+                        <button class="btn edit-point" data-id="${point.id}">Edytuj</button>
+                        <button class="btn btn-danger delete-point" data-id="${point.id}">Usuń</button>
+                    </div>
+                `;
+                
+                pointsList.appendChild(pointItem);
+            });
+            
+            // Dodawanie obsługi zdarzeń do przycisków edycji i usuwania
+            document.querySelectorAll('.edit-point').forEach(button => {
+                button.addEventListener('click', function() {
+                    const pointId = this.getAttribute('data-id');
+                    editPoint(pointId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-point').forEach(button => {
+                button.addEventListener('click', function() {
+                    const pointId = this.getAttribute('data-id');
+                    deleteItemId = pointId;
+                    deleteItemType = 'point';
+                    document.getElementById('confirm-delete-text').textContent = 'Czy na pewno chcesz usunąć ten punkt? Spowoduje to również usunięcie powiązanych tras.';
+                    document.getElementById('confirm-delete-modal').style.display = 'block';
+                });
+            });
+        }
+        
+        function renderRoutes() {
+            const routesList = document.getElementById('routes-list');
+            
+            routesList.innerHTML = '';
+            
+            if (routes.length === 0) {
+                routesList.innerHTML = '<p>Brak dodanych tras.</p>';
+                return;
+            }
+            
+            routes.forEach(route => {
+                const routeItem = document.createElement('li');
+                routeItem.className = 'route-item';
+                
+                const departureDate = new Date(route.departure).toLocaleString('pl-PL');
+                const arrivalDate = new Date(route.arrival).toLocaleString('pl-PL');
+                
+                routeItem.innerHTML = `
+                    <div class="route-item-info">
+                        <div class="route-item-title">
+                            <span class="point-type-badge type-Transport">Transport</span>
+                            ${route.startName} → ${route.endName}
+                        </div>
+                        <div class="route-item-details">
+                            <div><i class="fas fa-calendar"></i> Odjazd: ${departureDate}</div>
+                            <div><i class="fas fa-calendar-check"></i> Przyjazd: ${arrivalDate}</div>
+                            <div><i class="fas fa-coins"></i> Koszt: ${route.cost} ${route.currency}</div>
+                            ${route.description ? `<div><i class="fas fa-info-circle"></i> ${route.description}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="route-actions">
+                        <button class="btn edit-route" data-id="${route.id}">Edytuj</button>
+                        <button class="btn btn-danger delete-route" data-id="${route.id}">Usuń</button>
+                    </div>
+                `;
+                
+                routesList.appendChild(routeItem);
+            });
+            
+            // Dodawanie obsługi zdarzeń do przycisków edycji i usuwania
+            document.querySelectorAll('.edit-route').forEach(button => {
+                button.addEventListener('click', function() {
+                    const routeId = this.getAttribute('data-id');
+                    editRoute(routeId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-route').forEach(button => {
+                button.addEventListener('click', function() {
+                    const routeId = this.getAttribute('data-id');
+                    deleteItemId = routeId;
+                    deleteItemType = 'route';
+                    document.getElementById('confirm-delete-text').textContent = 'Czy na pewno chcesz usunąć tę trasę?';
+                    document.getElementById('confirm-delete-modal').style.display = 'block';
+                });
+            });
+        }
+        
+        function renderAdditionalCosts() {
+            const additionalCostsList = document.getElementById('additional-costs-list');
+            
+            additionalCostsList.innerHTML = '';
+            
+            if (additionalCosts.length === 0) {
+                additionalCostsList.innerHTML = '<p>Brak dodanych kosztów dodatkowych.</p>';
+                return;
+            }
+            
+            additionalCosts.forEach(cost => {
+                const costItem = document.createElement('li');
+                costItem.className = 'point-item';
+                
+                costItem.innerHTML = `
+                    <div class="point-item-info">
+                        <div class="point-item-title">
+                            ${cost.description}
+                            <span class="point-type-badge type-Inne">Koszt dodatkowy</span>
+                        </div>
+                        <div class="point-item-details">
+                            <div><i class="fas fa-coins"></i> Kwota: ${cost.amount} ${cost.currency}</div>
+                        </div>
+                    </div>
+                    <div class="point-actions">
+                        <button class="btn edit-additional-cost" data-id="${cost.id}">Edytuj</button>
+                        <button class="btn btn-danger delete-additional-cost" data-id="${cost.id}">Usuń</button>
+                    </div>
+                `;
+                
+                additionalCostsList.appendChild(costItem);
+            });
+            
+            // Dodawanie obsługi zdarzeń do przycisków edycji i usuwania
+            document.querySelectorAll('.edit-additional-cost').forEach(button => {
+                button.addEventListener('click', function() {
+                    const costId = this.getAttribute('data-id');
+                    editAdditionalCost(costId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-additional-cost').forEach(button => {
+                button.addEventListener('click', function() {
+                    const costId = this.getAttribute('data-id');
+                    deleteItemId = costId;
+                    deleteItemType = 'additionalCost';
+                    document.getElementById('confirm-delete-text').textContent = 'Czy na pewno chcesz usunąć ten koszt dodatkowy?';
+                    document.getElementById('confirm-delete-modal').style.display = 'block';
+                });
+            });
+        }
+        
+        function renderPointsOnMap() {
+            // Usuwanie istniejących punktów z mapy
+            pointsLayer.forEach(marker => map.removeLayer(marker));
+            pointsLayer = [];
+            
+            // Dodawanie punktów do mapy
+            points.forEach(point => {
+                const color = typeColors[point.type] || '#95a5a6';
+                
+                const marker = L.circleMarker([point.lat, point.lng], {
+                    color: 'white',
+                    fillColor: color,
+                    fillOpacity: 0.8,
+                    weight: 2,
+                    radius: 8
+                }).addTo(map);
+                
+                // Tworzenie zawartości popupu
+                let popupContent = `
+                    <div class="info-box">
+                        <div class="info-box-title">${point.name}</div>
+                        <div class="info-box-content">
+                            <p><strong>Typ:</strong> ${point.type}</p>
+                `;
+                
+                if (point.address) {
+                    popupContent += `<p><strong>Adres:</strong> ${point.address}</p>`;
+                }
+                
+                if (point.description) {
+                    popupContent += `<p><strong>Opis:</strong> ${point.description}</p>`;
+                }
+                
+                if (point.cost > 0) {
+                    popupContent += `<p><strong>Koszt:</strong> ${point.cost} ${point.currency}</p>`;
+                }
+                
+                if (point.imageUrl) {
+                    popupContent += `<img src="${point.imageUrl}" class="info-box-image" alt="${point.name}">`;
+                }
+                
+                popupContent += `
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                pointsLayer.push(marker);
+            });
+            
+            // Dostosowanie widoku mapy, jeśli istnieją punkty
+            if (points.length > 0) {
+                const latlngs = points.map(point => [point.lat, point.lng]);
+                const bounds = L.latLngBounds(latlngs);
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+        
+        function renderRoutesOnMap() {
+            // Usuwanie istniejących tras z mapy
+            routesLayer.forEach(line => map.removeLayer(line));
+            routesLayer = [];
+            
+            // Dodawanie tras do mapy
+            routes.forEach(route => {
+                const startPoint = points.find(p => p.id === route.startId);
+                const endPoint = points.find(p => p.id === route.endId);
+                
+                if (startPoint && endPoint) {
+                    const line = L.polyline([
+                        [startPoint.lat, startPoint.lng],
+                        [endPoint.lat, endPoint.lng]
+                    ], {
+                        color: '#f39c12',
+                        weight: 3,
+                        opacity: 0.7,
+                        dashArray: '10, 10'
+                    }).addTo(map);
+                    
+                    // Dodawanie popupu do linii
+                    const departureDate = new Date(route.departure).toLocaleString('pl-PL');
+                    const arrivalDate = new Date(route.arrival).toLocaleString('pl-PL');
+                    
+                    const popupContent = `
+                        <div class="info-box">
+                            <div class="info-box-title">${route.startName} → ${route.endName}</div>
+                            <div class="info-box-content">
+                                <p><strong>Odjazd:</strong> ${departureDate}</p>
+                                <p><strong>Przyjazd:</strong> ${arrivalDate}</p>
+                                ${route.description ? `<p><strong>Opis:</strong> ${route.description}</p>` : ''}
+                                <p><strong>Koszt:</strong> ${route.cost} ${route.currency}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    line.bindPopup(popupContent);
+                    
+                    routesLayer.push(line);
+                }
+            });
+        }
+        
+        function updateRoutesSelects() {
+            const routeStart = document.getElementById('route-start');
+            const routeEnd = document.getElementById('route-end');
+            const editRouteStart = document.getElementById('edit-route-start');
+            const editRouteEnd = document.getElementById('edit-route-end');
+            
+            // Funkcja pomocnicza do aktualizacji select
+            function updateSelect(selectElement) {
+                const currentValue = selectElement.value;
+                
+                // Czyszczenie opcji, zachowując pierwszą
+                while (selectElement.options.length > 1) {
+                    selectElement.remove(1);
+                }
+                
+                // Dodawanie nowych opcji
+                points.forEach(point => {
+                    const option = document.createElement('option');
+                    option.value = point.id;
+                    option.textContent = point.name;
+                    selectElement.appendChild(option);
+                });
+                
+                // Przywracanie poprzedniej wartości, jeśli istnieje wśród nowych opcji
+                if (currentValue) {
+                    const exists = Array.from(selectElement.options).some(opt => opt.value === currentValue);
+                    if (exists) {
+                        selectElement.value = currentValue;
+                    }
+                }
+            }
+            
+            updateSelect(routeStart);
+            updateSelect(routeEnd);
+            updateSelect(editRouteStart);
+            updateSelect(editRouteEnd);
+        }
+        
+        function updateCostSummary() {
+            // Inicjalizacja zmiennych kosztów
+            let foodCostPLN = 0;
+            let foodCostEUR = 0;
+            let accommodationCostPLN = 0;
+            let accommodationCostEUR = 0;
+            let attractionCostPLN = 0;
+            let attractionCostEUR = 0;
+            let transportCostPLN = 0;
+            let transportCostEUR = 0;
+            let additionalCostPLN = 0;
+            let additionalCostEUR = 0;
+            
+            // Sumowanie kosztów punktów według
